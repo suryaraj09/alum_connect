@@ -1,5 +1,20 @@
 const User = require('../models/User');
+const Profile = require('../models/Profile');
 const generateToken = require('../utils/generateToken');
+
+const checkProfileComplete = async (userId) => {
+    const profile = await Profile.findOne({ user: userId });
+    if (!profile) return false;
+
+    // Check required fields for gatekeeping
+    const isComplete =
+        profile.education &&
+        profile.graduationYear &&
+        profile.domain &&
+        profile.skills && profile.skills.length > 0;
+
+    return !!isComplete;
+};
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -28,6 +43,7 @@ const registerUser = async (req, res, next) => {
                 email: user.email,
                 role: user.role,
                 token: generateToken(user._id),
+                isProfileComplete: false,
             });
         } else {
             res.status(400);
@@ -54,6 +70,7 @@ const loginUser = async (req, res, next) => {
                 email: user.email,
                 role: user.role,
                 token: generateToken(user._id),
+                isProfileComplete: await checkProfileComplete(user._id),
             });
         } else {
             res.status(401);
