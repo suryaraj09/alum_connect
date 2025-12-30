@@ -1,6 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User, Globe, MessageSquare, Video, PieChart, LayoutDashboard } from 'lucide-react';
+import { LogOut, MessageSquare, Video, PieChart, LayoutDashboard } from 'lucide-react';
+
+const NavLink = ({ to, icon, label }) => (
+    <Link to={to} className="flex items-center space-x-2 text-gray-400 hover:text-white font-medium transition-all group py-2">
+        <span className="group-hover:text-[#4ade80] transition-colors">{icon}</span>
+        <span>{label}</span>
+    </Link>
+);
 
 const Navbar = () => {
     const { user, logout } = useAuth();
@@ -14,45 +21,37 @@ const Navbar = () => {
     if (!user) return null;
 
     return (
-        <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-            <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
-                    Alum_Connect
+        <nav className="bg-[#011613] border-b border-[#1a3a35] sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                <Link to="/" className="text-2xl font-serif font-bold text-white tracking-tight">
+                    Alum<span className="text-[#4ade80]">_</span>Connect
                 </Link>
 
-                <div className="hidden md:flex items-center space-x-6">
-                    <NavLink to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" />
-                    <NavLink to="/discovery" icon={<Globe size={20} />} label="Discovery" />
-                    <NavLink to="/workspaces" icon={<MessageSquare size={20} />} label="Workspaces" />
-                    <NavLink to="/videos" icon={<Video size={20} />} label="Videos" />
-                    <NavLink to="/analytics" icon={<PieChart size={20} />} label="Stats" />
+                <div className="hidden md:flex items-center space-x-8">
+                    <NavLink to="/" icon={<LayoutDashboard size={18} />} label="Home" />
+                    <NavLink to="/workspaces" icon={<MessageSquare size={18} />} label="Workspaces" />
+                    <NavLink to="/videos" icon={<Video size={18} />} label="Videos" />
+                    <NavLink to="/analytics" icon={<PieChart size={18} />} label="Analytics" />
                 </div>
 
-                <div className="flex items-center space-x-4">
-                    <Link to="/profile" className="flex items-center space-x-2 text-slate-700 hover:text-primary-600 transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold">
-                            {user.name[0].toUpperCase()}
+                <div className="flex items-center space-x-6">
+                    <Link to="/profile" className="flex items-center space-x-3 group">
+                        <div className="w-10 h-10 rounded-full border-2 border-[#1a3a35] group-hover:border-[#4ade80] flex items-center justify-center bg-[#052e28] text-[#4ade80] font-bold transition-all shadow-inner overflow-hidden">
+                            {user.name && user.name[0].toUpperCase()}
                         </div>
-                        <span className="hidden sm:inline font-medium">{user.name}</span>
+                        <span className="hidden sm:inline text-gray-300 group-hover:text-white font-medium transition-colors">{user.name}</span>
                     </Link>
                     <button
                         onClick={handleLogout}
-                        className="p-2 text-slate-500 hover:text-red-600 transition-colors"
+                        className="p-2 text-gray-500 hover:text-red-400 transition-colors bg-[#052e28] rounded-full"
                         title="Logout"
                     >
-                        <LogOut size={20} />
+                        <LogOut size={18} />
                     </button>
                 </div>
             </div>
         </nav>
     );
 };
-
-const NavLink = ({ to, icon, label }) => (
-    <Link to={to} className="flex items-center space-x-2 text-slate-600 hover:text-primary-600 font-medium transition-colors">
-        {icon}
-        <span>{label}</span>
-    </Link>
-);
 
 export default Navbar;
