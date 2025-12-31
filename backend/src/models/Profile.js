@@ -51,6 +51,24 @@ const profileSchema = new mongoose.Schema({
         type: [String],
         default: [],
     },
+    mentorshipRole: {
+        type: String,
+        enum: ['mentor', 'mentee', 'both'],
+        default: 'mentee',
+    },
+    userType: {
+        type: String,
+        enum: ['student', 'faculty', 'alumni', 'other'],
+        default: 'student',
+    },
+    skillsToLearn: {
+        type: [String],
+        default: [],
+    },
+    skillsToTeach: {
+        type: [String],
+        default: [],
+    },
     domain: {
         type: String,
         required: [true, 'Please add a professional domain (e.g., Tech, Finance, Arts)'],

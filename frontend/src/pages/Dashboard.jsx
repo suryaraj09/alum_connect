@@ -116,20 +116,25 @@ const SmallProfileCard = ({ profile, onConnect }) => {
 
 const Dashboard = () => {
     const [profiles, setProfiles] = useState([]);
+    const [myProfile, setMyProfile] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchProfiles = async () => {
+        const fetchData = async () => {
             try {
-                const { data } = await api.get('/profiles');
-                setProfiles(data);
+                const [profilesRes, myProfileRes] = await Promise.all([
+                    api.get('/profiles'),
+                    api.get('/profiles/me')
+                ]);
+                setProfiles(profilesRes.data);
+                setMyProfile(myProfileRes.data);
             } catch (err) {
-                console.error('Failed to fetch real profiles, using fallback data', err);
+                console.error('Failed to fetch data', err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchProfiles();
+        fetchData();
     }, []);
 
     const handleConnect = async (userId) => {
@@ -142,26 +147,58 @@ const Dashboard = () => {
 
     const displayProfiles = profiles.length > 0 ? profiles : dummyUsers;
 
+    // Filter profiles based on role for 'both' users
+    const mentors = displayProfiles.filter(p => p.mentorshipRole === 'mentor' || p.mentorshipRole === 'both');
+    const mentees = displayProfiles.filter(p => p.mentorshipRole === 'mentee' || p.mentorshipRole === 'both');
+
     return (
         <div className="min-h-screen bg-[#021f1a]">
             <Hero />
 
             <div className="px-6 -mt-10 mb-10 overflow-hidden">
-                <div className="max-w-7xl mx-auto">
-                    <h2 className="text-xl font-serif text-white/80 mb-6 flex items-center gap-3">
-                        <span className="w-10 h-[1px] bg-[#4ade80]"></span>
-                        Featured Mentors
-                    </h2>
-                    <ProfileCarousel profiles={displayProfiles} />
+                <div className="max-w-7xl mx-auto space-y-12">
+                    {/* Role-based conditional rendering */}
+                    {myProfile?.mentorshipRole === 'both' ? (
+                        <>
+                            <div>
+                                <h2 className="text-xl font-serif text-white/80 mb-6 flex items-center gap-3">
+                                    <span className="w-10 h-[1px] bg-[#4ade80]"></span>
+                                    Recommended Mentors
+                                </h2>
+                                <ProfileCarousel profiles={mentors} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-serif text-white/80 mb-6 flex items-center gap-3">
+                                    <span className="w-10 h-[1px] bg-[#008ba3]"></span>
+                                    Potential Mentees
+                                </h2>
+                                <ProfileCarousel profiles={mentees} />
+                            </div>
+                        </>
+                    ) : (
+                        <div>
+                            <h2 className="text-xl font-serif text-white/80 mb-6 flex items-center gap-3">
+                                <span className="w-10 h-[1px] bg-[#4ade80]"></span>
+                                {myProfile?.mentorshipRole === 'mentor' ? 'Potential Mentees' : 'Recommended Mentors'}
+                            </h2>
+                            <ProfileCarousel profiles={displayProfiles} />
+                        </div>
+                    )}
                 </div>
             </div>
 
             <main className="max-w-7xl mx-auto px-6 py-20 border-t border-[#1a3a35]">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                     <div>
-                        <h2 className="text-4xl font-serif text-white mb-3">Explore All Profiles</h2>
+                        <h2 className="text-4xl font-serif text-white mb-3">
+                            {myProfile?.mentorshipRole === 'mentor' ? 'Discovery for Mentors' :
+                                myProfile?.mentorshipRole === 'mentee' ? 'Discovery for Mentees' :
+                                    'Community Discovery'}
+                        </h2>
                         <p className="text-gray-400 max-w-xl">
-                            Organic, interest-driven connections. Find the perfect match for your professional journey.
+                            {myProfile?.mentorshipRole === 'mentor' ? 'Guide the next generation of talent. Find mentees who align with your expertise.' :
+                                myProfile?.mentorshipRole === 'mentee' ? 'Connect with mentors who can accelerate your career and help you master new skills.' :
+                                    'Organic, interest-driven connections. Find the perfect match for your professional journey.'}
                         </p>
                     </div>
                     <div className="flex gap-3">

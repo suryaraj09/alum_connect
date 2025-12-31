@@ -1,17 +1,40 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, MessageSquare, Video, PieChart, LayoutDashboard, Users, Compass } from 'lucide-react';
 
-const NavLink = ({ to, icon, label }) => (
-    <Link to={to} className="flex items-center space-x-2 text-gray-400 hover:text-white font-medium transition-all group py-2">
-        <span className="group-hover:text-[#4ade80] transition-colors">{icon}</span>
-        <span>{label}</span>
-    </Link>
-);
+const NavLink = ({ to, icon, label }) => {
+    const location = useLocation();
+    const isActive = location.pathname === to;
+
+    return (
+        <Link
+            to={to}
+            className={`flex items-center space-x-2 font-medium transition-all group py-2 relative`}
+        >
+            <span className={`${isActive ? 'text-[#4ade80]' : 'text-gray-400 group-hover:text-[#4ade80]'} transition-colors`}>
+                {icon}
+            </span>
+            <span className={`${isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'} transition-colors`}>
+                {label}
+            </span>
+
+            {/* Lining effect for active state */}
+            {isActive && (
+                <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#4ade80] rounded-full shadow-[0_0_8px_rgba(74,222,128,0.4)]" />
+            )}
+
+            {/* Subtle lining effect for hover state (not active) */}
+            {!isActive && (
+                <div className="absolute -bottom-1 left-1/2 right-1/2 group-hover:left-0 group-hover:right-0 h-0.5 bg-gray-700 transition-all duration-300 rounded-full" />
+            )}
+        </Link>
+    );
+};
 
 const Navbar = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogout = () => {
         logout();
@@ -37,11 +60,14 @@ const Navbar = () => {
                 </div>
 
                 <div className="flex items-center space-x-6">
-                    <Link to="/profile" className="flex items-center space-x-3 group">
-                        <div className="w-10 h-10 rounded-full border-2 border-[#1a3a35] group-hover:border-[#4ade80] flex items-center justify-center bg-[#052e28] text-[#4ade80] font-bold transition-all shadow-inner overflow-hidden">
+                    <Link to="/profile" className={`flex items-center space-x-3 group relative py-1`}>
+                        <div className={`w-10 h-10 rounded-full border-2 ${location.pathname === '/profile' ? 'border-[#4ade80]' : 'border-[#1a3a35]'} group-hover:border-[#4ade80] flex items-center justify-center bg-[#052e28] text-[#4ade80] font-bold transition-all shadow-inner overflow-hidden`}>
                             {user.name && user.name[0].toUpperCase()}
                         </div>
-                        <span className="hidden sm:inline text-gray-300 group-hover:text-white font-medium transition-colors">{user.name}</span>
+                        <span className={`hidden sm:inline ${location.pathname === '/profile' ? 'text-white' : 'text-gray-300'} group-hover:text-white font-medium transition-colors`}>{user.name}</span>
+                        {location.pathname === '/profile' && (
+                            <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-[#4ade80] rounded-full shadow-[0_0_8px_rgba(74,222,128,0.4)]" />
+                        )}
                     </Link>
                     <button
                         onClick={handleLogout}

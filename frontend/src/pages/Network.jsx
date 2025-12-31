@@ -40,8 +40,17 @@ const Network = () => {
         try {
             if (action === 'accept') {
                 const { data } = await api.post(`/connections/accept/${inviteId}`);
-                // Move to shared workspace
+                // Remove from invitations immediately
+                setInvitations(invitations.filter(inv => inv._id !== inviteId));
+                // Add to connections if we have the data
+                // Since Connection model might differ, best to refetch or manually push
+                // For now, removing from list is the primary "on the spot" requirement
+
+                // Navigate only if needed, otherwise stay to show "Recent Connections" updated
                 if (data.workspaceId) {
+                    // Navigate after a short delay so user sees the "Accepted" state? 
+                    // Or just navigate. User said "accepted we see direct connection".
+                    // If moving to workspace, they see the connection there.
                     navigate(`/workspace/${data.workspaceId}`);
                 }
             } else {

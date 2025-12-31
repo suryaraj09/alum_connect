@@ -59,7 +59,25 @@ const upsertProfile = async (req, res, next) => {
 const getProfiles = async (req, res, next) => {
     try {
         const { year, skills, domain } = req.query;
+
+        // Get the current user's profile to understand their needs
+        const myProfile = await Profile.findOne({ user: req.user._id });
+
         let query = { user: { $ne: req.user._id } }; // Exclude self
+
+        // Role-based filtering logic
+        if (myProfile) {
+            if (myProfile.mentorshipRole === 'mentor') {
+                // Mentors look for Mentees
+                query.mentorshipRole = { $in: ['mentee', 'both'] };
+            } else if (myProfile.mentorshipRole === 'mentee') {
+                // Mentees look for Mentors
+                query.mentorshipRole = { $in: ['mentor', 'both'] };
+            }
+            // If myProfile is 'both', we might want to show everyone, 
+            // but the dashboard will handle splitting into carousels.
+            // For general discovery, we show everyone else.
+        }
 
         if (year) query.graduationYear = year;
         if (domain) query.domain = { $regex: domain, $options: 'i' };
@@ -68,9 +86,36 @@ const getProfiles = async (req, res, next) => {
             query.skills = { $in: skillsArray };
         }
 
-        const profiles = await Profile.find(query)
+        let profiles = await Profile.find(query)
             .populate('user', ['name', 'profilePicture'])
             .sort({ engagementScore: -1 });
+
+        // Ranking based on skillsToLearn vs skillsToTeach match
+        if (myProfile) {
+            profiles = profiles.sort((a, b) => {
+                let scoreA = 0;
+                let scoreB = 0;
+
+                // Match based on what I WANT TO LEARN vs what they TEACH
+                if (myProfile.skillsToLearn && myProfile.skillsToLearn.length > 0) {
+                    const matchA = a.skillsToTeach?.filter(s => myProfile.skillsToLearn.includes(s)).length || 0;
+                    const matchB = b.skillsToTeach?.filter(s => myProfile.skillsToLearn.includes(s)).length || 0;
+                    scoreA += matchA * 2;
+                    scoreB += matchB * 2;
+                }
+
+                // Match based on what I TEACH vs what they WANT TO LEARN
+                if (myProfile.skillsToTeach && myProfile.skillsToTeach.length > 0) {
+                    const matchA = a.skillsToLearn?.filter(s => myProfile.skillsToTeach.includes(s)).length || 0;
+                    const matchB = b.skillsToLearn?.filter(s => myProfile.skillsToTeach.includes(s)).length || 0;
+                    scoreA += matchA;
+                    scoreB += matchB;
+                }
+
+                return scoreB - scoreA;
+            });
+        }
+
         res.json(profiles);
     } catch (error) {
         next(error);

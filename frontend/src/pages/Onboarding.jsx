@@ -16,6 +16,7 @@ import {
     Upload,
     Camera
 } from 'lucide-react';
+import { getMediaUrl } from '../utils/url';
 
 const Onboarding = () => {
     const [step, setStep] = useState(1);
@@ -33,8 +34,25 @@ const Onboarding = () => {
         education: [{ school: '', degree: '', fieldOfStudy: '', graduationYear: 2025 }],
         experience: [{ title: '', company: '', from: '', to: '', description: '', current: false }],
         profilePicture: '',
-        skills: []
+        skills: [],
+        mentorshipRole: 'mentee', // mentor, mentee, both
+        userType: 'student', // student, faculty, alumni, other
+        skillsToLearn: [],
+        skillsToTeach: []
     });
+
+    const [roles, setRoles] = useState({
+        isMentor: false,
+        isMentee: true // default
+    });
+
+    const wellKnownSkills = [
+        'Artificial Intelligence', 'Machine Learning', 'Data Science',
+        'Web Development', 'Mobile App Development', 'UI/UX Design',
+        'Product Management', 'Cloud Computing', 'Cybersecurity',
+        'Blockchain', 'Digital Marketing', 'Business Strategy',
+        'Finance', 'Public Speaking', 'Photography'
+    ];
 
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
@@ -94,6 +112,38 @@ const Onboarding = () => {
         });
     };
 
+    const toggleRole = (role) => {
+        const newRoles = { ...roles, [role]: !roles[role] };
+        // Ensure at least one is selected
+        if (!newRoles.isMentor && !newRoles.isMentee) return;
+
+        setRoles(newRoles);
+
+        let roleVal = 'both';
+        if (newRoles.isMentor && !newRoles.isMentee) roleVal = 'mentor';
+        if (!newRoles.isMentor && newRoles.isMentee) roleVal = 'mentee';
+
+        setFormData({ ...formData, mentorshipRole: roleVal });
+    };
+
+    const toggleSkillToLearn = (skill) => {
+        const current = formData.skillsToLearn;
+        if (current.includes(skill)) {
+            setFormData({ ...formData, skillsToLearn: current.filter(s => s !== skill) });
+        } else {
+            setFormData({ ...formData, skillsToLearn: [...current, skill] });
+        }
+    };
+
+    const toggleSkillToTeach = (skill) => {
+        const current = formData.skillsToTeach;
+        if (current.includes(skill)) {
+            setFormData({ ...formData, skillsToTeach: current.filter(s => s !== skill) });
+        } else {
+            setFormData({ ...formData, skillsToTeach: [...current, skill] });
+        }
+    };
+
     const handleEducationChange = (index, field, value) => {
         const newEdu = [...formData.education];
         newEdu[index][field] = value;
@@ -133,7 +183,7 @@ const Onboarding = () => {
                         <div className="text-center mb-12 relative group">
                             <div className="w-32 h-32 bg-[#4ade80]/10 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-[#4ade80]/20 overflow-hidden relative">
                                 {formData.profilePicture ? (
-                                    <img src={`http://localhost:5001${formData.profilePicture}`} alt="Preview" className="w-full h-full object-cover" />
+                                    <img src={getMediaUrl(formData.profilePicture)} alt="Preview" className="w-full h-full object-cover" />
                                 ) : (
                                     <User className="text-[#4ade80]/20" size={64} />
                                 )}
@@ -188,8 +238,8 @@ const Onboarding = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">Short Bio</label>
                                 <textarea
-                                    className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-4 rounded-2xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] transition-all outline-none placeholder:text-gray-600 h-32"
-                                    placeholder="Tell the community who you are and what you're passionate about..."
+                                    className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-4 rounded-2xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] transition-all outline-none placeholder:text-gray-600 h-24"
+                                    placeholder="Tell the community who you are..."
                                     value={formData.bio}
                                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                                 />
@@ -199,13 +249,88 @@ const Onboarding = () => {
                 );
             case 2:
                 return (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                        <div className="text-center">
+                            <h3 className="text-2xl font-serif font-bold text-white">Tell us about your role at AU</h3>
+                            <p className="text-gray-400 mt-2">Are you a student, faculty member, or alumni of Ahmedabad University?</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            {[
+                                { id: 'student', title: 'Student', desc: 'Currently studying at Ahmedabad University' },
+                                { id: 'faculty', title: 'Faculty', desc: 'Teaching or researching at Ahmedabad University' },
+                                { id: 'alumni', title: 'Alumni', desc: 'Have graduated from Ahmedabad University' },
+                                { id: 'other', title: 'Other Associate', desc: 'Affiliated with Ahmedabad University in another capacity' }
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setFormData({ ...formData, userType: item.id })}
+                                    className={`p-5 rounded-3xl border-2 text-left transition-all flex items-start gap-4 ${formData.userType === item.id ? 'bg-[#4ade80]/10 border-[#4ade80]' : 'bg-[#021f1a]/50 border-white/10 opacity-60 hover:opacity-100'}`}
+                                >
+                                    <div className={`mt-1 w-6 h-6 rounded-full border flex items-center justify-center ${formData.userType === item.id ? 'bg-[#4ade80] border-[#4ade80]' : 'border-gray-500'}`}>
+                                        {formData.userType === item.id && <CheckCircle className="text-[#021f1a]" size={14} />}
+                                    </div>
+                                    <div>
+                                        <h4 className={`text-lg font-bold ${formData.userType === item.id ? 'text-white' : 'text-gray-400'}`}>{item.title}</h4>
+                                        <p className="text-xs text-gray-500 mt-1">{item.desc}</p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                );
+            case 3:
+                return (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                        <div className="text-center">
+                            <h3 className="text-2xl font-serif font-bold text-white">How do you want to participate?</h3>
+                            <p className="text-gray-400 mt-2">Choose your primary roles in the community. You can change this later.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            <button
+                                onClick={() => toggleRole('isMentee')}
+                                className={`p-6 rounded-3xl border-2 text-left transition-all flex items-start gap-4 ${roles.isMentee ? 'bg-[#4ade80]/10 border-[#4ade80]' : 'bg-[#021f1a]/50 border-white/10 opacity-60 hover:opacity-100'}`}
+                            >
+                                <div className={`mt-1 w-6 h-6 rounded border flex items-center justify-center ${roles.isMentee ? 'bg-[#4ade80] border-[#4ade80]' : 'border-gray-500'}`}>
+                                    {roles.isMentee && <CheckCircle className="text-[#021f1a]" size={14} />}
+                                </div>
+                                <div>
+                                    <h4 className={`text-lg font-bold ${roles.isMentee ? 'text-white' : 'text-gray-400'}`}>Interested in being a Mentee</h4>
+                                    <p className="text-sm text-gray-500 mt-1">I'm here to learn from others and grow my skill set.</p>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => toggleRole('isMentor')}
+                                className={`p-6 rounded-3xl border-2 text-left transition-all flex items-start gap-4 ${roles.isMentor ? 'bg-[#4ade80]/10 border-[#4ade80]' : 'bg-[#021f1a]/50 border-white/10 opacity-60 hover:opacity-100'}`}
+                            >
+                                <div className={`mt-1 w-6 h-6 rounded border flex items-center justify-center ${roles.isMentor ? 'bg-[#4ade80] border-[#4ade80]' : 'border-gray-500'}`}>
+                                    {roles.isMentor && <CheckCircle className="text-[#021f1a]" size={14} />}
+                                </div>
+                                <div>
+                                    <h4 className={`text-lg font-bold ${roles.isMentor ? 'text-white' : 'text-gray-400'}`}>Interested in becoming a Mentor</h4>
+                                    <p className="text-sm text-gray-500 mt-1">I want to share my knowledge and guide fellow members.</p>
+                                </div>
+                            </button>
+                        </div>
+
+                        <div className="p-4 bg-[#4ade80]/5 rounded-2xl border border-[#4ade80]/10">
+                            <p className="text-xs text-gray-400 italic">
+                                <strong>Note:</strong> If you select only Mentee, you're here to learn. If only Mentor, you're here to teach. Selecting both allows you to both learn and contribute knowledge.
+                            </p>
+                        </div>
+                    </div>
+                );
+            case 3:
+                return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                         <div className="text-center mb-8">
                             <div className="w-16 h-16 bg-[#4ade80]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <GraduationCap className="text-[#4ade80]" size={32} />
                             </div>
                             <h3 className="text-2xl font-serif font-bold text-white">Education Background</h3>
-                            <p className="text-gray-400 mt-2">Where did you study? This helps us find your alumni network.</p>
+                            <p className="text-gray-400 mt-2">Where did you study?</p>
                         </div>
 
                         {formData.education.map((edu, idx) => (
@@ -245,7 +370,7 @@ const Onboarding = () => {
                         ))}
                     </div>
                 );
-            case 3:
+            case 4:
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                         <div className="text-center mb-8">
@@ -253,7 +378,7 @@ const Onboarding = () => {
                                 <Briefcase className="text-[#4ade80]" size={32} />
                             </div>
                             <h3 className="text-2xl font-serif font-bold text-white">Work Experience</h3>
-                            <p className="text-gray-400 mt-2">Tell us about your professional journey so far.</p>
+                            <p className="text-gray-400 mt-2">Tell us about your professional journey.</p>
                         </div>
 
                         {formData.experience.map((exp, idx) => (
@@ -282,7 +407,7 @@ const Onboarding = () => {
                                     <input
                                         type="text"
                                         className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none text-sm"
-                                        placeholder="From (e.g. Jan 2020)"
+                                        placeholder="From (e.g. 2020)"
                                         value={exp.from}
                                         onChange={(e) => handleExperienceChange(idx, 'from', e.target.value)}
                                     />
@@ -298,116 +423,92 @@ const Onboarding = () => {
                         ))}
                     </div>
                 );
-            case 4:
-                return (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                        <div className="text-center mb-8">
-                            <div className="w-16 h-16 bg-[#4ade80]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Award className="text-[#4ade80]" size={32} />
-                            </div>
-                            <h3 className="text-2xl font-serif font-bold text-white">Skills & Expertise</h3>
-                            <p className="text-gray-400 mt-2">What are you great at? Add at least 3 skills to stand out.</p>
-                        </div>
-
-                        <div className="space-y-4 border-b border-white/5 pb-8 mb-8">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Languages Spoken</label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    className="w-full bg-[#021f1a]/50 border border-white/10 text-white pl-4 pr-32 py-4 rounded-2xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none"
-                                    placeholder="Add a language (e.g. English, Hindi)"
-                                    value={languageInput}
-                                    onChange={(e) => setLanguageInput(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && addLanguage()}
-                                />
-                                <button
-                                    onClick={addLanguage}
-                                    className="absolute right-2 top-2 bottom-2 px-6 bg-[#4ade80]/20 text-[#4ade80] rounded-xl font-bold flex items-center gap-2 hover:bg-[#4ade80]/30 transition-all border border-[#4ade80]/20"
-                                >
-                                    Add
-                                </button>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {formData.languages.map(lang => (
-                                    <div key={lang} className="flex items-center gap-2 px-3 py-1 bg-[#1a3a35] border border-white/5 text-gray-300 rounded-lg text-sm">
-                                        {lang}
-                                        <button onClick={() => removeLanguage(lang)} className="hover:text-red-400 transition-colors">
-                                            <X size={12} />
-                                        </button>
-                                    </div>
-                                ))}
-                                {formData.languages.length === 0 && <span className="text-xs text-gray-600 italic">No languages added yet.</span>}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Skills & Expertise</label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    className="w-full bg-[#021f1a]/50 border border-white/10 text-white pl-4 pr-32 py-4 rounded-2xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none"
-                                    placeholder="Add a skill (e.g. React, UX Design)"
-                                    value={skillInput}
-                                    onChange={(e) => setSkillInput(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                                />
-                                <button
-                                    onClick={addSkill}
-                                    className="absolute right-2 top-2 bottom-2 px-6 bg-[#4ade80] text-[#021f1a] rounded-xl font-bold flex items-center gap-2 hover:bg-[#34d399] transition-all"
-                                >
-                                    <Plus size={18} /> Add
-                                </button>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                                {formData.skills.map(skill => (
-                                    <div key={skill.name} className="flex items-center gap-2 px-4 py-2 bg-[#4ade80]/10 border border-[#4ade80]/20 text-[#4ade80] rounded-full text-sm">
-                                        {skill.name}
-                                        <button onClick={() => removeSkill(skill.name)} className="hover:text-white transition-colors">
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {formData.skills.length < 3 && (
-                                <p className="text-xs text-gray-500 text-center italic">Please add {3 - formData.skills.length} more skill(s) to continue.</p>
-                            )}
-                        </div>
-                    </div>
-                );
             case 5:
                 return (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 overflow-y-auto max-h-[60vh] pr-2">
+                        <div className="text-center">
+                            <h3 className="text-2xl font-serif font-bold text-white">Skills & Expertise</h3>
+                            <p className="text-gray-400 mt-2">What do you want to learn or teach?</p>
+                        </div>
+
+                        {roles.isMentee && (
+                            <div className="space-y-4">
+                                <label className="block text-sm font-medium text-[#4ade80]">I want to learn:</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {wellKnownSkills.map(skill => (
+                                        <button
+                                            key={skill}
+                                            onClick={() => toggleSkillToLearn(skill)}
+                                            className={`px-3 py-1.5 rounded-full border text-xs transition-all ${formData.skillsToLearn.includes(skill) ? 'bg-[#4ade80] text-[#021f1a] border-[#4ade80]' : 'border-white/10 text-gray-400 hover:border-white/30'}`}
+                                        >
+                                            {skill}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[#021f1a]/50 border border-white/10 text-white pl-4 pr-32 py-3 rounded-xl outline-none"
+                                        placeholder="Add more skills to learn..."
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                toggleSkillToLearn(e.target.value);
+                                                e.target.value = '';
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {roles.isMentor && (
+                            <div className="space-y-4 pt-4 border-t border-white/5">
+                                <label className="block text-sm font-medium text-[#008ba3]">I can teach:</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {wellKnownSkills.map(skill => (
+                                        <button
+                                            key={skill}
+                                            onClick={() => toggleSkillToTeach(skill)}
+                                            className={`px-3 py-1.5 rounded-full border text-xs transition-all ${formData.skillsToTeach.includes(skill) ? 'bg-[#008ba3] text-white border-[#008ba3]' : 'border-white/10 text-gray-400 hover:border-white/30'}`}
+                                        >
+                                            {skill}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[#021f1a]/50 border border-white/10 text-white pl-4 pr-32 py-3 rounded-xl outline-none"
+                                        placeholder="Add more skills to teach..."
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                toggleSkillToTeach(e.target.value);
+                                                e.target.value = '';
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            case 6:
+                return (
                     <div className="text-center space-y-6 animate-in fade-in zoom-in-95 duration-700">
-                        <div className="w-24 h-24 bg-[#4ade80]/20 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_50px_rgba(74,222,128,0.2)]">
+                        <div className="w-24 h-24 bg-[#4ade80]/20 rounded-full flex items-center justify-center mx-auto mb-8">
                             <CheckCircle className="text-[#4ade80]" size={48} />
                         </div>
                         <h3 className="text-3xl font-serif font-bold text-white">All set!</h3>
-                        <p className="text-gray-400 max-w-sm mx-auto">Your professional profile is ready. Welcome to the Alum_Connect family!</p>
+                        <p className="text-gray-400">Welcome to the Alum_Connect family!</p>
 
-                        <div className="bg-black/20 rounded-3xl p-8 border border-white/5 space-y-4 text-left mt-8">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-[#1a3a35] border border-white/5 overflow-hidden">
-                                    {formData.profilePicture ? (
-                                        <img src={`http://localhost:5001${formData.profilePicture}`} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <User className="text-gray-600 m-2" />
-                                    )}
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white">{user?.name}</h4>
-                                    <p className="text-xs text-[#4ade80]">{formData.domain}</p>
-                                </div>
+                        <div className="bg-black/20 rounded-3xl p-6 border border-white/5 text-left">
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-400 text-sm">Role:</span>
+                                <span className="text-[#4ade80] font-bold capitalize">{formData.mentorshipRole}</span>
                             </div>
-                            <div className="flex gap-4 border-t border-white/5 pt-4 text-xs text-gray-400">
-                                <div className="flex flex-col">
-                                    <span className="text-white font-bold">{formData.education[0]?.school || 'University'}</span>
-                                    <span>Education</span>
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-white font-bold">{formData.skills.length}</span>
-                                    <span>Skills Added</span>
-                                </div>
+                            <div className="mt-4 text-xs text-gray-500">
+                                {roles.isMentee && <p>Learning: {formData.skillsToLearn.slice(0, 3).join(', ')}...</p>}
+                                {roles.isMentor && <p>Teaching: {formData.skillsToTeach.slice(0, 3).join(', ')}...</p>}
                             </div>
                         </div>
                     </div>
@@ -429,7 +530,7 @@ const Onboarding = () => {
                         Alum<span className="text-[#4ade80]">_</span>Connect
                     </h1>
                     <div className="flex items-center gap-2">
-                        {[1, 2, 3, 4, 5].map(i => (
+                        {[1, 2, 3, 4, 5, 6, 7].map(i => (
                             <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-[#4ade80]' : i < step ? 'w-3 bg-[#4ade80]/40' : 'w-3 bg-white/10'}`}></div>
                         ))}
                     </div>
@@ -452,11 +553,12 @@ const Onboarding = () => {
                             <div></div>
                         )}
 
-                        {step < 5 ? (
+                        {step < 7 ? (
                             <button
                                 disabled={
                                     (step === 1 && (!formData.domain.trim() || !formData.title.trim())) ||
-                                    (step === 4 && formData.skills.length < 3)
+                                    (step === 6 && roles.isMentee && formData.skillsToLearn.length === 0) ||
+                                    (step === 6 && roles.isMentor && formData.skillsToTeach.length === 0)
                                 }
                                 onClick={() => setStep(step + 1)}
                                 className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-3 rounded-2xl flex items-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed group"
