@@ -21,6 +21,7 @@ const WorkspaceDetail = () => {
     const [linkModalType, setLinkModalType] = useState('document');
     const [linkData, setLinkData] = useState({ title: '', url: '' });
     const [isSharing, setIsSharing] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
 
@@ -64,6 +65,12 @@ const WorkspaceDetail = () => {
             setMessages(prev => {
                 // Avoid duplicates if from self (already added optimistically)
                 if (message.sender._id === currentUser?._id) return prev;
+
+                // Increment unread count if not in message view
+                if (activeView !== 'messages') {
+                    setUnreadCount(c => c + 1);
+                }
+
                 return [...prev, message];
             });
 
@@ -270,6 +277,21 @@ const WorkspaceDetail = () => {
                     <Clock size={24} />
                 </button>
                 <button
+                    onClick={() => {
+                        setActiveView('messages');
+                        setUnreadCount(0);
+                    }}
+                    className={`p-3 transition-all relative ${activeView === 'messages' ? 'text-[#4ade80] bg-[#1a3a35]/50 rounded-xl' : 'text-gray-400 hover:text-white'}`}
+                    title="Messages"
+                >
+                    <MessageSquare size={24} />
+                    {unreadCount > 0 && (
+                        <span className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-[#011613]">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
+                </button>
+                <button
                     onClick={() => setActiveView('files')}
                     className={`p-3 transition-all ${activeView === 'files' ? 'text-[#4ade80] bg-[#1a3a35]/50 rounded-xl' : 'text-gray-400 hover:text-white'}`}
                     title="Shared Storage"
@@ -322,210 +344,215 @@ const WorkspaceDetail = () => {
                     </div>
                 </header>
 
-                <div className="flex-grow grid grid-cols-1 lg:grid-cols-4 h-[calc(100vh-144px)] overflow-hidden">
-                    {/* Live View Area (Left/Center) */}
-                    <div className="lg:col-span-3 p-8 flex flex-col gap-6 relative overflow-y-auto custom-scrollbar">
-                        {incomingCall && !isInCall && (
-                            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-[#052e28] border-2 border-[#4ade80] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-bounce">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-[#4ade80] rounded-full flex items-center justify-center text-[#021f1a]">
-                                        <Phone size={20} />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-white">Incoming Call...</h4>
-                                        <p className="text-xs text-gray-400">Someone is inviting you to connect</p>
-                                    </div>
+                <div className="flex-grow h-[calc(100vh-144px)] overflow-hidden">
+                    {activeView === 'messages' ? (
+                        <div className="h-full flex flex-col bg-[#052e28]/30">
+                            <div className="p-4 border-b border-[#1a3a35] flex items-center justify-between px-8">
+                                <div className="flex items-center gap-2">
+                                    <MessageSquare size={18} className="text-[#4ade80]" />
+                                    <h3 className="text-sm font-bold">Workspace Chat</h3>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setIncomingCall(null)}
-                                        className="p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
-                                    >
-                                        <PhoneOff size={20} />
-                                    </button>
-                                    <button
-                                        onClick={() => setIsInCall(true)}
-                                        className="p-2 bg-[#4ade80] text-[#021f1a] rounded-lg hover:bg-[#34d399] transition-all"
-                                    >
-                                        <Phone size={20} />
-                                    </button>
-                                </div>
+                                {isTyping && (
+                                    <span className="text-[10px] font-bold text-[#4ade80] uppercase tracking-widest animate-pulse">Someone is typing...</span>
+                                )}
                             </div>
-                        )}
 
-                        {activeView === 'document' || activeView === 'spreadsheet' || activeView === 'meeting' ? (
-                            <SharedResources workspaceId={id} type={activeView} socket={socket} />
-                        ) : activeView === 'files' ? (
-                            <FileManager workspaceId={id} socket={socket} />
-                        ) : (
-                            <div className="flex-grow bg-[#052e28] rounded-3xl border border-[#1a3a35] relative overflow-hidden shadow-2xl p-8">
-                                <h3 className="text-2xl font-serif font-bold mb-8 flex items-center gap-3">
-                                    <Grid className="text-[#4ade80]" />
-                                    Workspace Home
-                                </h3>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <button
-                                        onClick={() => {
-                                            setLinkModalType('document');
-                                            setShowLinkModal(true);
-                                        }}
-                                        className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4"
-                                    >
-                                        <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <FileText size={24} />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-lg">Share Document</h4>
-                                            <p className="text-sm text-gray-400">Add link to Google Docs / Word</p>
-                                        </div>
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            setLinkModalType('spreadsheet');
-                                            setShowLinkModal(true);
-                                        }}
-                                        className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4"
-                                    >
-                                        <div className="w-12 h-12 bg-green-500/20 text-green-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <Grid size={24} />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-lg">Share Spreadsheet</h4>
-                                            <p className="text-sm text-gray-400">Link Google Sheets / Excel</p>
-                                        </div>
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            setLinkModalType('meeting');
-                                            setShowLinkModal(true);
-                                        }}
-                                        className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4"
-                                    >
-                                        <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <Video size={24} />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-lg">Create Meeting</h4>
-                                            <p className="text-sm text-gray-400">Share Google Meet link</p>
-                                        </div>
-                                    </button>
-
-                                    <button onClick={() => setActiveView('files')} className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4">
-                                        <div className="w-12 h-12 bg-orange-500/20 text-orange-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <Folder size={24} />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-lg">Shared Storage</h4>
-                                            <p className="text-sm text-gray-400">Upload & manage shared files</p>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Link Sharing Modal */}
-                        {showLinkModal && (
-                            <div className="absolute inset-0 z-[60] bg-[#021f1a]/80 backdrop-blur-sm flex items-center justify-center p-8">
-                                <div className="bg-[#052e28] border border-[#1a3a35] w-full max-w-md rounded-[2rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h3 className="text-xl font-serif font-bold capitalize">Share {linkModalType}</h3>
-                                        <button onClick={() => setShowLinkModal(false)} className="text-gray-500 hover:text-white"><X size={24} /></button>
+                            <div className="flex-grow p-8 space-y-4 overflow-y-auto custom-scrollbar relative">
+                                {messages.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-30 italic text-center">
+                                        <MessageSquare size={48} className="mb-4" />
+                                        <p>No messages yet.<br />Start the conversation!</p>
                                     </div>
-                                    <form onSubmit={handleShareLink} className="space-y-6">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Title / Description</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                placeholder={linkModalType === 'meeting' ? 'e.g. Design Review - 3PM' : 'e.g. Marketing Strategy Draft'}
-                                                className="w-full bg-[#1a3a35] border border-[#1a3a35] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-all"
-                                                value={linkData.title}
-                                                onChange={e => setLinkData({ ...linkData, title: e.target.value })}
-                                            />
+                                ) : (
+                                    messages.map(msg => (
+                                        <div key={msg._id} className={`flex flex-col ${msg.sender?._id === currentUser?._id ? 'items-end' : 'items-start'}`}>
+                                            <div className={`max-w-[70%] p-4 rounded-2xl text-sm shadow-md ${msg.sender?._id === currentUser?._id ? 'bg-[#4ade80] text-[#021f1a] rounded-tr-none' : 'bg-[#1a3a35] text-gray-200 rounded-tl-none border border-[#25524b]'}`}>
+                                                {msg.content}
+                                            </div>
+                                            <div className="flex items-center gap-1.5 mt-1 px-1">
+                                                {msg.sender?._id !== currentUser?._id && <span className="text-[10px] font-bold text-[#4ade80]">{msg.sender?.name}</span>}
+                                                <span className="text-[9px] text-gray-500">
+                                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                                {isTyping && (
+                                    <div className="flex items-start">
+                                        <div className="bg-[#1a3a35] text-gray-400 px-4 py-3 rounded-2xl flex items-center gap-1.5 shadow-sm border border-[#25524b]">
+                                            <div className="flex gap-1">
+                                                <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                                <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                                <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-bounce"></div>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Typing</span>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+
+                            <form onSubmit={handleSend} className="p-6 bg-[#052e28] border-t border-[#1a3a35] flex gap-4 px-8">
+                                <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={handleTyping}
+                                    placeholder="Type a message..."
+                                    className="flex-grow bg-[#1a3a35] border border-[#25524b] rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-[#4ade80] transition-all shadow-inner"
+                                />
+                                <button type="submit" className="p-4 bg-[#4ade80] text-[#021f1a] rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#4ade80]/20">
+                                    <Send size={20} />
+                                </button>
+                            </form>
+                        </div>
+                    ) : (
+                        <div className="h-full p-8 flex flex-col gap-6 relative overflow-y-auto custom-scrollbar">
+                            {incomingCall && !isInCall && (
+                                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-[#052e28] border-2 border-[#4ade80] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-bounce">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-[#4ade80] rounded-full flex items-center justify-center text-[#021f1a]">
+                                            <Phone size={20} />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">URL Link</label>
-                                            <input
-                                                type="url"
-                                                required
-                                                placeholder="https://..."
-                                                className="w-full bg-[#1a3a35] border border-[#1a3a35] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-all"
-                                                value={linkData.url}
-                                                onChange={e => setLinkData({ ...linkData, url: e.target.value })}
-                                            />
+                                            <h4 className="font-bold text-white">Incoming Call...</h4>
+                                            <p className="text-xs text-gray-400">Someone is inviting you to connect</p>
                                         </div>
+                                    </div>
+                                    <div className="flex gap-2">
                                         <button
-                                            type="submit"
-                                            disabled={isSharing}
-                                            className="w-full py-4 bg-[#4ade80] text-[#021f1a] font-bold rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                                            onClick={() => setIncomingCall(null)}
+                                            className="p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
                                         >
-                                            {isSharing ? 'Sharing...' : `Share ${linkModalType}`}
+                                            <PhoneOff size={20} />
                                         </button>
-                                    </form>
+                                        <button
+                                            onClick={() => setIsInCall(true)}
+                                            className="p-2 bg-[#4ade80] text-[#021f1a] rounded-lg hover:bg-[#34d399] transition-all"
+                                        >
+                                            <Phone size={20} />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
 
-                    {/* Chat Area (Right) */}
-                    <div className="border-l border-[#1a3a35] bg-[#052e28]/30 flex flex-col">
-                        <div className="p-4 border-b border-[#1a3a35] flex items-center gap-2">
-                            <MessageSquare size={18} className="text-[#4ade80]" />
-                            <h3 className="text-sm font-bold">Workspace Chat</h3>
-                        </div>
-
-                        <div className="flex-grow p-4 space-y-4 overflow-y-auto custom-scrollbar relative">
-                            {messages.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-30 italic text-center">
-                                    <MessageSquare size={48} className="mb-4" />
-                                    <p>No messages yet.<br />Start the conversation!</p>
-                                </div>
+                            {activeView === 'document' || activeView === 'spreadsheet' || activeView === 'meeting' ? (
+                                <SharedResources workspaceId={id} type={activeView} socket={socket} />
+                            ) : activeView === 'files' ? (
+                                <FileManager workspaceId={id} socket={socket} />
                             ) : (
-                                messages.map(msg => (
-                                    <div key={msg._id} className={`flex flex-col ${msg.sender?._id === currentUser?._id ? 'items-end' : 'items-start'}`}>
-                                        <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${msg.sender?._id === currentUser?._id ? 'bg-[#4ade80] text-[#021f1a] rounded-tr-none' : 'bg-[#1a3a35] text-gray-200 rounded-tl-none border border-[#25524b]'}`}>
-                                            {msg.content}
-                                        </div>
-                                        <div className="flex items-center gap-1.5 mt-1 px-1">
-                                            {msg.sender?._id !== currentUser?._id && <span className="text-[10px] font-bold text-[#4ade80]">{msg.sender?.name}</span>}
-                                            <span className="text-[9px] text-gray-500">
-                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                            {isTyping && (
-                                <div className="flex items-start">
-                                    <div className="bg-[#1a3a35] text-gray-400 px-4 py-3 rounded-2xl flex items-center gap-1.5 shadow-sm border border-[#25524b]">
-                                        <div className="flex gap-1">
-                                            <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                            <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                            <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-bounce"></div>
-                                        </div>
-                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Typing</span>
+                                <div className="flex-grow bg-[#052e28] rounded-3xl border border-[#1a3a35] relative overflow-hidden shadow-2xl p-8">
+                                    <h3 className="text-2xl font-serif font-bold mb-8 flex items-center gap-3">
+                                        <Grid className="text-[#4ade80]" />
+                                        Workspace Home
+                                    </h3>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <button
+                                            onClick={() => {
+                                                setLinkModalType('document');
+                                                setShowLinkModal(true);
+                                            }}
+                                            className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4"
+                                        >
+                                            <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <FileText size={24} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-lg">Share Document</h4>
+                                                <p className="text-sm text-gray-400">Add link to Google Docs / Word</p>
+                                            </div>
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setLinkModalType('spreadsheet');
+                                                setShowLinkModal(true);
+                                            }}
+                                            className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4"
+                                        >
+                                            <div className="w-12 h-12 bg-green-500/20 text-green-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Grid size={24} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-lg">Share Spreadsheet</h4>
+                                                <p className="text-sm text-gray-400">Link Google Sheets / Excel</p>
+                                            </div>
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setLinkModalType('meeting');
+                                                setShowLinkModal(true);
+                                            }}
+                                            className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4"
+                                        >
+                                            <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Video size={24} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-lg">Create Meeting</h4>
+                                                <p className="text-sm text-gray-400">Share Google Meet link</p>
+                                            </div>
+                                        </button>
+
+                                        <button onClick={() => setActiveView('files')} className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4">
+                                            <div className="w-12 h-12 bg-orange-500/20 text-orange-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Folder size={24} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-lg">Shared Storage</h4>
+                                                <p className="text-sm text-gray-400">Upload & manage shared files</p>
+                                            </div>
+                                        </button>
                                     </div>
                                 </div>
                             )}
-                            <div ref={messagesEndRef} />
-                        </div>
 
-                        <form onSubmit={handleSend} className="p-4 bg-[#052e28] border-t border-[#1a3a35] flex gap-2">
-                            <input
-                                type="text"
-                                value={newMessage}
-                                onChange={handleTyping}
-                                placeholder="Type a message..."
-                                className="flex-grow bg-[#1a3a35] border border-[#25524b] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#4ade80] transition-all"
-                            />
-                            <button type="submit" className="p-2 bg-[#4ade80] text-[#021f1a] rounded-xl hover:scale-105 transition-all">
-                                <Send size={18} />
-                            </button>
-                        </form>
-                    </div>
+                            {/* Link Sharing Modal */}
+                            {showLinkModal && (
+                                <div className="absolute inset-0 z-[60] bg-[#021f1a]/80 backdrop-blur-sm flex items-center justify-center p-8">
+                                    <div className="bg-[#052e28] border border-[#1a3a35] w-full max-w-md rounded-[2rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h3 className="text-xl font-serif font-bold capitalize">Share {linkModalType}</h3>
+                                            <button onClick={() => setShowLinkModal(false)} className="text-gray-500 hover:text-white"><X size={24} /></button>
+                                        </div>
+                                        <form onSubmit={handleShareLink} className="space-y-6">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Title / Description</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    placeholder={linkModalType === 'meeting' ? 'e.g. Design Review - 3PM' : 'e.g. Marketing Strategy Draft'}
+                                                    className="w-full bg-[#1a3a35] border border-[#1a3a35] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-all"
+                                                    value={linkData.title}
+                                                    onChange={e => setLinkData({ ...linkData, title: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">URL Link</label>
+                                                <input
+                                                    type="url"
+                                                    required
+                                                    placeholder="https://..."
+                                                    className="w-full bg-[#1a3a35] border border-[#1a3a35] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-all"
+                                                    value={linkData.url}
+                                                    onChange={e => setLinkData({ ...linkData, url: e.target.value })}
+                                                />
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={isSharing}
+                                                className="w-full py-4 bg-[#4ade80] text-[#021f1a] font-bold rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                                            >
+                                                {isSharing ? 'Sharing...' : `Share ${linkModalType}`}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
             {isInCall && (
