@@ -8,8 +8,7 @@ const checkProfileComplete = async (userId) => {
 
     // Check required fields for gatekeeping
     const isComplete =
-        profile.education &&
-        profile.graduationYear &&
+        profile.education && profile.education.length > 0 &&
         profile.domain &&
         profile.skills && profile.skills.length > 0;
 

@@ -7,15 +7,44 @@ const profileSchema = new mongoose.Schema({
         required: true,
     },
     education: {
-        type: String,
-        required: [true, 'Please add education details'],
+        type: [
+            {
+                school: String,
+                degree: String,
+                fieldOfStudy: String,
+                from: String,
+                to: String,
+                current: Boolean,
+                description: String,
+            }
+        ],
+        default: [],
+    },
+    experience: {
+        type: [
+            {
+                title: String,
+                company: String,
+                location: String,
+                from: String,
+                to: String,
+                current: Boolean,
+                description: String,
+            }
+        ],
+        default: [],
     },
     graduationYear: {
         type: Number,
-        required: [true, 'Please add graduation year'],
     },
     skills: {
-        type: [String],
+        type: [
+            {
+                name: String,
+                endorsements: { type: Number, default: 0 },
+                projects: [String],
+            }
+        ],
         default: [],
     },
     interests: {
@@ -26,9 +55,21 @@ const profileSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add a professional domain (e.g., Tech, Finance, Arts)'],
     },
+    title: {
+        type: String,
+        required: [true, 'Please add a professional title (e.g., Senior Software Engineer)'],
+    },
+    location: {
+        type: String,
+        default: 'Distributed',
+    },
+    languages: {
+        type: [String],
+        default: ['English'],
+    },
     bio: {
         type: String,
-        maxlength: 500,
+        maxlength: 1000,
     },
     isMentorAvailable: {
         type: Boolean,
@@ -39,13 +80,16 @@ const profileSchema = new mongoose.Schema({
         default: false,
     },
     schedulingLink: {
-        type: String, // e.g., Calendly
+        type: String,
     },
     engagementScore: {
         type: Number,
         default: 0,
     },
     profilePicture: {
+        type: String, // URL
+    },
+    coverPicture: {
         type: String, // URL
     },
     socialLinks: {

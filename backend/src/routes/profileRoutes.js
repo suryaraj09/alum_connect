@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getMyProfile, upsertProfile, getProfiles } = require('../controllers/profileController');
+const { getMyProfile, upsertProfile, getProfiles, getProfileById } = require('../controllers/profileController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -8,5 +8,6 @@ router.route('/')
     .post(protect, upsertProfile);
 
 router.get('/me', protect, getMyProfile);
+router.get('/:id', protect, getProfileById);
 
 module.exports = router;

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getMediaUrl } from '../../utils/url';
+import { Link } from 'react-router-dom';
 
 const users = [
     {
@@ -52,11 +54,12 @@ const users = [
 
 const ProfileCard = ({ user, isFeatured }) => {
     const name = user.user?.name || user.name;
-    const image = user.profilePicture || user.image || `https://ui-avatars.com/api/?name=${name}&background=0D8ABC&color=fff`;
-    const role = user.role || user.domain;
-    const company = user.company || user.education;
+    const image = getMediaUrl(user.profilePicture || user.image) || `https://ui-avatars.com/api/?name=${name}&background=0D8ABC&color=fff`;
+    const role = user.title || user.role || user.domain;
+    const companyLabel = user.company || user.education?.school || (Array.isArray(user.education) ? user.education[0]?.school : user.education);
     const skills = user.skills || [];
     const score = user.engagementScore || user.score || '0.0';
+    const profileId = user.user?._id || user._id;
 
     return (
         <motion.div
@@ -73,19 +76,22 @@ const ProfileCard = ({ user, isFeatured }) => {
             </div>
             <div className="p-5 text-left">
                 <h3 className="text-xl font-bold text-white mb-1 truncate">{name}</h3>
-                <p className="text-sm text-gray-400 mb-4 truncate">{role} at {company}</p>
+                <p className="text-sm text-gray-400 mb-4 truncate">{role} {companyLabel ? `at ${companyLabel}` : ''}</p>
 
                 <div className="flex flex-wrap gap-2 mb-6 h-8 overflow-hidden">
-                    {skills.map(skill => (
-                        <span key={skill} className="text-[10px] px-2 py-1 bg-[#25524b] text-gray-300 rounded-full">
-                            {skill}
+                    {skills.map((skill, idx) => (
+                        <span key={idx} className="text-[10px] px-2 py-1 bg-[#25524b] text-gray-300 rounded-full">
+                            {typeof skill === 'string' ? skill : skill.name}
                         </span>
                     ))}
                 </div>
 
-                <button className="w-full py-2 bg-gradient-to-r from-[#008ba3] to-[#01b4d3] hover:from-[#01b4d3] hover:to-[#02c8eb] text-white rounded-lg text-sm font-semibold transition-all">
+                <Link
+                    to={`/profile/${profileId}`}
+                    className="block w-full py-2 bg-gradient-to-r from-[#008ba3] to-[#01b4d3] hover:from-[#01b4d3] hover:to-[#02c8eb] text-white rounded-lg text-sm font-semibold transition-all text-center"
+                >
                     View profile
-                </button>
+                </Link>
             </div>
         </motion.div>
     );

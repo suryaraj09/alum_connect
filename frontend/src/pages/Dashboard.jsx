@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import Hero from '../components/discovery/Hero';
 import ProfileCarousel from '../components/discovery/ProfileCarousel';
 import api from '../services/api';
-import { Star, Filter, ArrowRight, UserPlus, CheckCircle } from 'lucide-react';
+import { Star, Filter, ArrowRight, UserPlus, CheckCircle, ChevronRight } from 'lucide-react';
+import { getMediaUrl } from '../utils/url';
 
 const dummyUsers = [
     {
@@ -48,6 +50,7 @@ const dummyUsers = [
 ];
 
 const SmallProfileCard = ({ profile, onConnect }) => {
+    const navigate = useNavigate();
     const [requestSent, setRequestSent] = useState(false);
 
     const handleConnect = async () => {
@@ -67,8 +70,8 @@ const SmallProfileCard = ({ profile, onConnect }) => {
         <div className="bg-[#1a3a35] rounded-xl overflow-hidden border border-[#25524b] group hover:border-[#008ba3] transition-all hover:shadow-xl hover:-translate-y-1">
             <div className="aspect-square overflow-hidden relative">
                 <img
-                    src={profile.profilePicture || `https://ui-avatars.com/api/?name=${profile.user.name}&background=0D8ABC&color=fff`}
-                    alt={profile.user.name}
+                    src={getMediaUrl(profile.profilePicture || profile.user?.profilePicture) || `https://ui-avatars.com/api/?name=${profile.user?.name || 'User'}&background=0D8ABC&color=fff`}
+                    alt={profile.user?.name || 'User'}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-2 right-2 bg-[#052e28]/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] text-white flex items-center gap-1">
@@ -77,13 +80,13 @@ const SmallProfileCard = ({ profile, onConnect }) => {
                 </div>
             </div>
             <div className="p-4">
-                <h4 className="font-bold text-white text-sm mb-0.5">{profile.user.name}</h4>
-                <p className="text-[11px] text-gray-400 mb-3">{profile.domain} • Class of {profile.graduationYear}</p>
+                <h4 className="font-bold text-white text-sm mb-0.5">{profile.user?.name || 'User'}</h4>
+                <p className="text-[11px] text-gray-400 mb-3">{profile.title || profile.domain} • Class of {profile.graduationYear || '2025'}</p>
 
                 <div className="flex flex-wrap gap-1 mb-4 h-5 overflow-hidden">
-                    {profile.skills.slice(0, 2).map(skill => (
-                        <span key={skill} className="text-[9px] px-1.5 py-0.5 bg-[#25524b] text-gray-400 rounded-sm">
-                            {skill}
+                    {profile.skills?.slice(0, 2).map((skill, idx) => (
+                        <span key={idx} className="text-[9px] px-1.5 py-0.5 bg-[#25524b] text-gray-400 rounded-sm">
+                            {typeof skill === 'string' ? skill : skill.name}
                         </span>
                     ))}
                 </div>
@@ -99,9 +102,12 @@ const SmallProfileCard = ({ profile, onConnect }) => {
                     >
                         {requestSent ? <><CheckCircle size={12} /> Pending</> : <><UserPlus size={12} /> Connect</>}
                     </button>
-                    <button className="p-1.5 border border-[#25524b] text-gray-400 hover:text-white hover:border-gray-500 rounded-md transition-all">
+                    <Link
+                        to={`/profile/${profile.user?._id || profile._id}`}
+                        className="p-1.5 border border-[#25524b] text-gray-400 hover:text-white hover:border-gray-500 rounded-md transition-all flex items-center justify-center cursor-pointer"
+                    >
                         <ArrowRight size={14} />
-                    </button>
+                    </Link>
                 </div>
             </div>
         </div>
@@ -159,13 +165,9 @@ const Dashboard = () => {
                         </p>
                     </div>
                     <div className="flex gap-3">
-                        <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1a3a35] text-white rounded-xl border border-[#25524b] hover:border-gray-500 transition-all text-sm">
-                            <Filter className="w-4 h-4" /> Filters
-                        </button>
-                        <div className="h-10 w-px bg-[#25524b] hidden md:block self-center"></div>
-                        <p className="text-gray-500 text-sm self-center hidden md:block">
-                            Showing <span className="text-white font-bold">{displayProfiles.length}</span> results
-                        </p>
+                        <Link to="/discovery" className="flex items-center gap-2 px-5 py-2.5 bg-[#4ade80] text-[#021f1a] rounded-xl font-bold transition-all text-sm hover:bg-[#34d399]">
+                            Explore More <ChevronRight size={16} />
+                        </Link>
                     </div>
                 </div>
 
@@ -174,14 +176,6 @@ const Dashboard = () => {
                         <SmallProfileCard key={p._id} profile={p} onConnect={handleConnect} />
                     ))}
                 </div>
-
-                {displayProfiles.length > 10 && (
-                    <div className="mt-20 text-center">
-                        <button className="px-12 py-4 bg-transparent border-2 border-[#008ba3] text-[#008ba3] hover:bg-[#008ba3] hover:text-white rounded-full font-bold transition-all shadow-[0_0_20px_rgba(0,139,163,0.1)]">
-                            Discover More Experts
-                        </button>
-                    </div>
-                )}
             </main>
         </div>
     );

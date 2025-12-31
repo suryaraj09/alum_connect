@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, MessageSquare, Video, PieChart, LayoutDashboard } from 'lucide-react';
+import { LogOut, MessageSquare, Video, PieChart, LayoutDashboard, Users, Compass } from 'lucide-react';
 
 const NavLink = ({ to, icon, label }) => (
     <Link to={to} className="flex items-center space-x-2 text-gray-400 hover:text-white font-medium transition-all group py-2">
@@ -29,6 +29,8 @@ const Navbar = () => {
 
                 <div className="hidden md:flex items-center space-x-8">
                     <NavLink to="/" icon={<LayoutDashboard size={18} />} label="Home" />
+                    <NavLink to="/discovery" icon={<Compass size={18} />} label="Discovery" />
+                    <NavLink to="/network" icon={<Users size={18} />} label="Network" />
                     <NavLink to="/workspaces" icon={<MessageSquare size={18} />} label="Workspaces" />
                     <NavLink to="/videos" icon={<Video size={18} />} label="Videos" />
                     <NavLink to="/analytics" icon={<PieChart size={18} />} label="Analytics" />

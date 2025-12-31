@@ -85,4 +85,62 @@ const getMyConnections = async (req, res, next) => {
     }
 };
 
-module.exports = { sendConnectionRequest, acceptConnectionRequest, getMyConnections };
+// @desc    Get received pending requests
+// @route   GET /api/connections/received
+// @access  Private
+const getPendingRequests = async (req, res, next) => {
+    try {
+        const requests = await Connection.find({
+            recipient: req.user._id,
+            status: 'pending',
+        }).populate('requester', ['name', 'email']);
+
+        // Mocking the 'role' for now as it might be in Profile
+        const enrichedRequests = requests.map(req => ({
+            _id: req._id,
+            from: {
+                name: req.requester.name,
+                role: 'Alum_Connect Member' // Fallback
+            },
+            type: 'Mentorship' // Default
+        }));
+
+        res.json(enrichedRequests);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Get accepted connections with workspaces
+// @route   GET /api/connections/friends
+// @access  Private
+const getFriendConnections = async (req, res, next) => {
+    try {
+        const connections = await Connection.find({
+            $or: [{ requester: req.user._id }, { recipient: req.user._id }],
+            status: 'accepted',
+        }).populate('requester recipient', ['name', 'email']);
+
+        const friends = await Promise.all(connections.map(async (conn) => {
+            const friend = conn.requester._id.toString() === req.user._id.toString() ? conn.recipient : conn.requester;
+            const workspace = await Workspace.findOne({ connection: conn._id });
+            return {
+                _id: conn._id,
+                user: friend,
+                workspaceId: workspace ? workspace._id : null
+            };
+        }));
+
+        res.json(friends);
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = {
+    sendConnectionRequest,
+    acceptConnectionRequest,
+    getMyConnections,
+    getPendingRequests,
+    getFriendConnections
+};

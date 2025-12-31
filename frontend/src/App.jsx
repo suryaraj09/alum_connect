@@ -9,6 +9,10 @@ import Profile from './pages/Profile';
 import Workspaces from './pages/Workspaces';
 import VideoFeed from './pages/VideoFeed';
 import Analytics from './pages/Analytics';
+import ProfileDetail from './pages/ProfileDetail';
+import Network from './pages/Network';
+import WorkspaceDetail from './pages/WorkspaceDetail';
+import Onboarding from './pages/Onboarding';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -21,7 +25,7 @@ const ProfileGate = ({ children }) => {
   if (loading) return <div>Loading...</div>;
 
   if (user && !user.isProfileComplete) {
-    return <Navigate to="/profile" />;
+    return <Navigate to="/onboarding" />;
   }
 
   return children;
@@ -36,6 +40,7 @@ function AppRoutes() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
 
             <Route path="/" element={<PrivateRoute><ProfileGate><Dashboard /></ProfileGate></PrivateRoute>} />
             <Route path="/discovery" element={<PrivateRoute><ProfileGate><Discovery /></ProfileGate></PrivateRoute>} />
@@ -43,6 +48,9 @@ function AppRoutes() {
             <Route path="/workspaces" element={<PrivateRoute><ProfileGate><Workspaces /></ProfileGate></PrivateRoute>} />
             <Route path="/videos" element={<PrivateRoute><ProfileGate><VideoFeed /></ProfileGate></PrivateRoute>} />
             <Route path="/analytics" element={<PrivateRoute><ProfileGate><Analytics /></ProfileGate></PrivateRoute>} />
+            <Route path="/profile/:id" element={<PrivateRoute><ProfileGate><ProfileDetail /></ProfileGate></PrivateRoute>} />
+            <Route path="/network" element={<PrivateRoute><ProfileGate><Network /></ProfileGate></PrivateRoute>} />
+            <Route path="/workspace/:id" element={<PrivateRoute><ProfileGate><WorkspaceDetail /></ProfileGate></PrivateRoute>} />
           </Routes>
         </main>
       </div>
