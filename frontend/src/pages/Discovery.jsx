@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import { Search, Filter, UserPlus, MapPin, ExternalLink, ChevronRight } from 'lucide-react';
+import { Search, Filter, UserPlus, UserCheck, MapPin, ExternalLink, ChevronRight } from 'lucide-react';
 import { getMediaUrl } from '../utils/url';
 
 const Discovery = () => {
@@ -150,7 +150,7 @@ const Discovery = () => {
                                                 disabled
                                                 className="flex-grow bg-[#052e28] text-gray-400 border border-white/10 font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed"
                                             >
-                                                <UserPlus size={18} /> {p.isRequester ? 'Pending' : 'Accept Request'}
+                                                <UserPlus size={18} /> {p.isRequester ? 'Request Pending' : 'Accept Request'}
                                             </button>
                                         ) : (
                                             <button
