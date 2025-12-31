@@ -11,9 +11,20 @@ const messageSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
-    text: {
+    content: {
         type: String,
         required: true,
+    },
+    type: {
+        type: String,
+        enum: ['text', 'file', 'system'],
+        default: 'text',
+    },
+    fileUrl: {
+        type: String,
+    },
+    fileName: {
+        type: String,
     },
 }, { timestamps: true });
 

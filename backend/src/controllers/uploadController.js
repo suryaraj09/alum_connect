@@ -21,6 +21,16 @@ const postStorage = multer.diskStorage({
     }
 });
 
+// Storage for Workspace Files
+const workspaceStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'src/uploads/workspace');
+    },
+    filename: (req, file, cb) => {
+        cb(null, `file-${req.user._id}-${Date.now()}${path.extname(file.originalname)}`);
+    }
+});
+
 const uploadProfile = multer({
     storage: profileStorage,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
@@ -50,6 +60,15 @@ const uploadPostMedia = multer({
         }
     }
 }).single('media');
+
+const uploadWorkspaceFile = multer({
+    storage: workspaceStorage,
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+    fileFilter: (req, file, cb) => {
+        // Allow most document and media types
+        return cb(null, true);
+    }
+}).single('file');
 
 const uploadProfileMedia = (req, res) => {
     uploadProfile(req, res, (err) => {
@@ -81,4 +100,20 @@ const uploadPostMediaContent = (req, res) => {
     });
 };
 
-module.exports = { uploadProfileMedia, uploadPostMediaContent };
+const uploadWorkspaceFileContent = (req, res) => {
+    uploadWorkspaceFile(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ message: err });
+        }
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+        res.json({
+            url: `/uploads/workspace/${req.file.filename}`,
+            filename: req.file.originalname,
+            size: req.file.size
+        });
+    });
+};
+
+module.exports = { uploadProfileMedia, uploadPostMediaContent, uploadWorkspaceFileContent };

@@ -43,6 +43,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/profiles', require('./routes/profileRoutes'));
 app.use('/api/connections', require('./routes/connectionRoutes'));
 app.use('/api/workspaces', require('./routes/workspaceRoutes'));
+app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/videos', require('./routes/videoRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/posts', require('./routes/postRoutes'));
@@ -58,6 +59,20 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
+
+// Socket.io setup
+const io = require('socket.io')(server, {
+    cors: {
+        origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"],
+        methods: ['GET', 'POST'],
+        credentials: true
+    }
+});
+
+// Socket.io event handlers
+require('./utils/socketHandlers')(io);
+
+module.exports = { app, io };

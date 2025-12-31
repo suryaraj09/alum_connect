@@ -77,4 +77,23 @@ const addResource = async (req, res, next) => {
     }
 };
 
-module.exports = { getMyWorkspaces, getWorkspaceMessages, sendMessage, addResource };
+// @desc    Get workspace resources
+// @route   GET /api/workspaces/:id/resources
+// @access  Private
+const getWorkspaceResources = async (req, res, next) => {
+    try {
+        const workspace = await Workspace.findById(req.params.id)
+            .select('resources')
+            .populate('resources.uploadedBy', 'name');
+
+        if (!workspace) {
+            return res.status(404).json({ message: 'Workspace not found' });
+        }
+
+        res.json(workspace.resources.reverse());
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { getMyWorkspaces, getWorkspaceMessages, sendMessage, addResource, getWorkspaceResources };
