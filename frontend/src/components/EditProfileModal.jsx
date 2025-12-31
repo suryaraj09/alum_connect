@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Save, Plus, User, Camera } from 'lucide-react';
 import api from '../services/api';
 import { getMediaUrl } from '../utils/url';
+import { storage } from '../config/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const EditProfileModal = ({ isOpen, onClose, profile, onUpdate }) => {
     const [formData, setFormData] = useState({
@@ -19,19 +21,31 @@ const EditProfileModal = ({ isOpen, onClose, profile, onUpdate }) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const uploadData = new FormData();
-        uploadData.append('image', file);
-
         setIsUploading(true);
         try {
-            const { data } = await api.post('/upload/profile', uploadData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            setFormData({ ...formData, profilePicture: data.url });
+            const storageRef = ref(storage, `profiles/${Date.now()}_${file.name}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadTask.on(
+                "state_changed",
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    console.log("Upload is " + progress + "% done");
+                },
+                (error) => {
+                    console.error("Upload failed", error);
+                    alert("Image upload failed");
+                    setIsUploading(false);
+                },
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    setFormData({ ...formData, profilePicture: downloadURL });
+                    setIsUploading(false);
+                }
+            );
         } catch (err) {
-            console.error('Upload failed', err);
-            alert('Image upload failed');
-        } finally {
+            console.error('Setup failed', err);
+            alert('Image upload setup failed');
             setIsUploading(false);
         }
     };

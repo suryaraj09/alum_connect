@@ -97,7 +97,10 @@ const Profile = () => {
                             className="w-full h-full object-cover"
                             alt={user?.name}
                         />
-                        <button className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                        >
                             <Plus className="text-white" size={32} />
                         </button>
                     </div>

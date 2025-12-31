@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { X, ImageIcon, Video, Calendar, MoreHorizontal, ThumbsUp, Send, User, Users } from 'lucide-react';
+import { storage } from '../config/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const CreatePostModal = ({ isOpen, onClose, onPost, user }) => {
     const [text, setText] = useState('');
@@ -24,19 +26,29 @@ const CreatePostModal = ({ isOpen, onClose, onPost, user }) => {
         setIsUploading(true);
         try {
             let mediaUrl = null;
-            let finalMediaType = mediaType;
 
             if (rawFile) {
-                const formData = new FormData();
-                formData.append('media', rawFile);
-                const { data } = await api.post('/upload/post', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
+                const storageRef = ref(storage, `posts/${Date.now()}_${rawFile.name}`);
+                const uploadTask = uploadBytesResumable(storageRef, rawFile);
+
+                // We'll wrap common upload logic in a promise for easier await
+                mediaUrl = await new Promise((resolve, reject) => {
+                    uploadTask.on(
+                        "state_changed",
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            console.log("Post media upload is " + progress + "% done");
+                        },
+                        (error) => reject(error),
+                        async () => {
+                            const url = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve(url);
+                        }
+                    );
                 });
-                mediaUrl = data.url;
-                finalMediaType = data.type;
             }
 
-            onPost({ text, media: mediaUrl, mediaType: finalMediaType });
+            onPost({ text, media: mediaUrl, mediaType: mediaType });
             setText('');
             setPreview(null);
             setRawFile(null);
