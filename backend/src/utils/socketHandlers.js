@@ -82,6 +82,7 @@ module.exports = (io) => {
 
         // Typing indicator
         socket.on('typing', ({ workspaceId, userId, isTyping }) => {
+            // console.log(`User ${userId} typing in ${workspaceId}: ${isTyping}`);
             socket.to(workspaceId).emit('user-typing', { userId, isTyping });
         });
 
