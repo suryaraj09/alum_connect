@@ -33,7 +33,23 @@ if (process.env.NODE_ENV === 'development') {
 app.use(helmet());
 
 // Enable CORS
-app.use(cors());
+const allowedOrigins = [
+    "https://alumconnect-20a77.web.app",
+    "https://alumconnect-20a77.firebaseapp.com",
+    "http://localhost:5173",
+    "http://localhost:5174"
+];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
 
 // Static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -66,7 +82,14 @@ const server = app.listen(PORT, () => {
 // Socket.io setup
 const io = require('socket.io')(server, {
     cors: {
-        origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"],
+        origin: [
+            "https://alumconnect-20a77.web.app",
+            "https://alumconnect-20a77.firebaseapp.com",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
+            "http://localhost:5176"
+        ],
         methods: ['GET', 'POST'],
         credentials: true
     }
