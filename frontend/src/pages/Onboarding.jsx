@@ -32,7 +32,7 @@ const Onboarding = () => {
         bio: '',
         languages: [],
         education: [{ school: '', degree: '', fieldOfStudy: '', graduationYear: 2025 }],
-        experience: [{ title: '', company: '', from: '', to: '', description: '', current: false }],
+        experience: [{ title: '', company: '', from: 2020, to: new Date().getFullYear(), description: '', current: false }],
         profilePicture: '',
         skills: [],
         mentorshipRole: 'mentee', // mentor, mentee, both
@@ -322,7 +322,7 @@ const Onboarding = () => {
                         </div>
                     </div>
                 );
-            case 3:
+            case 4:
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                         <div className="text-center mb-8">
@@ -358,19 +358,22 @@ const Onboarding = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-300 mb-2">Grad Year</label>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none"
+                                        <select
+                                            className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none cursor-pointer"
                                             value={edu.graduationYear}
-                                            onChange={(e) => handleEducationChange(idx, 'graduationYear', e.target.value)}
-                                        />
+                                            onChange={(e) => handleEducationChange(idx, 'graduationYear', parseInt(e.target.value))}
+                                        >
+                                            {Array.from({ length: new Date().getFullYear() + 5 - 2000 + 1 }, (_, i) => 2000 + i).reverse().map(year => (
+                                                <option key={year} value={year}>{year}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 );
-            case 4:
+            case 5:
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                         <div className="text-center mb-8">
@@ -404,26 +407,48 @@ const Onboarding = () => {
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <input
-                                        type="text"
-                                        className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none text-sm"
-                                        placeholder="From (e.g. 2020)"
-                                        value={exp.from}
-                                        onChange={(e) => handleExperienceChange(idx, 'from', e.target.value)}
-                                    />
-                                    <input
-                                        type="text"
-                                        className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none text-sm"
-                                        placeholder="To (or 'Present')"
-                                        value={exp.to}
-                                        onChange={(e) => handleExperienceChange(idx, 'to', e.target.value)}
-                                    />
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">From Year</label>
+                                        <select
+                                            className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none cursor-pointer"
+                                            value={exp.from}
+                                            onChange={(e) => handleExperienceChange(idx, 'from', parseInt(e.target.value))}
+                                        >
+                                            {Array.from({ length: new Date().getFullYear() - 2000 + 1 }, (_, i) => 2000 + i).reverse().map(year => (
+                                                <option key={year} value={year}>{year}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">To Year</label>
+                                        <div className="flex gap-2">
+                                            <select
+                                                className="flex-1 bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none cursor-pointer disabled:opacity-50"
+                                                value={exp.to}
+                                                onChange={(e) => handleExperienceChange(idx, 'to', parseInt(e.target.value))}
+                                                disabled={exp.current}
+                                            >
+                                                {Array.from({ length: new Date().getFullYear() - 2000 + 1 }, (_, i) => 2000 + i).reverse().map(year => (
+                                                    <option key={year} value={year}>{year}</option>
+                                                ))}
+                                            </select>
+                                            <label className="flex items-center gap-2 px-3 bg-[#021f1a]/50 border border-white/10 rounded-xl cursor-pointer hover:border-[#4ade80]/30 transition-all">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 rounded border-gray-500 bg-transparent text-[#4ade80] focus:ring-[#4ade80] focus:ring-offset-0 cursor-pointer"
+                                                    checked={exp.current}
+                                                    onChange={(e) => handleExperienceChange(idx, 'current', e.target.checked)}
+                                                />
+                                                <span className="text-sm text-gray-300 whitespace-nowrap">Current</span>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 );
-            case 5:
+            case 6:
                 return (
                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 overflow-y-auto max-h-[60vh] pr-2">
                         <div className="text-center">
@@ -492,7 +517,7 @@ const Onboarding = () => {
                         )}
                     </div>
                 );
-            case 6:
+            case 7:
                 return (
                     <div className="text-center space-y-6 animate-in fade-in zoom-in-95 duration-700">
                         <div className="w-24 h-24 bg-[#4ade80]/20 rounded-full flex items-center justify-center mx-auto mb-8">
@@ -542,7 +567,7 @@ const Onboarding = () => {
                     </div>
 
                     <div className="mt-12 flex items-center justify-between">
-                        {step > 1 && step < 5 ? (
+                        {step > 1 && step < 7 ? (
                             <button
                                 onClick={() => setStep(step - 1)}
                                 className="flex items-center gap-2 text-gray-400 hover:text-white transition-all font-bold px-4 py-2"
@@ -556,7 +581,9 @@ const Onboarding = () => {
                         {step < 7 ? (
                             <button
                                 disabled={
-                                    (step === 1 && (!formData.domain.trim() || !formData.title.trim())) ||
+                                    (step === 1 && (!formData.domain.trim() || !formData.title.trim() || !formData.location.trim() || !formData.bio.trim())) ||
+                                    (step === 4 && (!formData.education[0]?.school.trim() || !formData.education[0]?.degree.trim())) ||
+                                    (step === 5 && (!formData.experience[0]?.title.trim() || !formData.experience[0]?.company.trim())) ||
                                     (step === 6 && roles.isMentee && formData.skillsToLearn.length === 0) ||
                                     (step === 6 && roles.isMentor && formData.skillsToTeach.length === 0)
                                 }
