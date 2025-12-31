@@ -2,6 +2,8 @@ const User = require('../models/User');
 const Profile = require('../models/Profile');
 const generateToken = require('../utils/generateToken');
 
+const ALLOWED_DOMAIN = 'ahduni.edu.in';
+
 const checkProfileComplete = async (userId) => {
     const profile = await Profile.findOne({ user: userId });
     if (!profile) return false;
@@ -21,6 +23,12 @@ const checkProfileComplete = async (userId) => {
 const registerUser = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
+
+        // Domain Check
+        if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+            res.status(400);
+            throw new Error(`Only university accounts (@${ALLOWED_DOMAIN}) are allowed`);
+        }
 
         const userExists = await User.findOne({ email });
 
@@ -92,4 +100,42 @@ const getMe = async (req, res, next) => {
     }
 };
 
-module.exports = { registerUser, loginUser, getMe };
+// @desc    Authenticate with Google
+// @route   POST /api/auth/google
+// @access  Public
+const googleLogin = async (req, res, next) => {
+    try {
+        const { email, name, googleId, profilePicture } = req.body;
+
+        // Domain Check
+        if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+            res.status(401);
+            throw new Error(`Only university accounts (@${ALLOWED_DOMAIN}) are allowed`);
+        }
+
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            // Create user if doesn't exist (Registration via Google)
+            user = await User.create({
+                name,
+                email,
+                password: Math.random().toString(36).slice(-10), // Random password for social login
+                profilePicture
+            });
+        }
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            token: generateToken(user._id),
+            isProfileComplete: await checkProfileComplete(user._id),
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { registerUser, loginUser, googleLogin, getMe };
