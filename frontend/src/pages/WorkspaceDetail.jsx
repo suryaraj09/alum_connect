@@ -49,7 +49,7 @@ const WorkspaceDetail = () => {
         });
 
         console.log('Socket connecting to:', import.meta.env.VITE_API_URL || 'http://localhost:5001');
-        console.log('User Info:', userInfo);
+        console.log('User Info:', currentUser);
 
         // Join workspace room
         newSocket.emit('join-workspace', {
@@ -63,12 +63,12 @@ const WorkspaceDetail = () => {
             console.log('Received new message:', message);
             setMessages(prev => {
                 // Avoid duplicates if from self (already added optimistically)
-                if (message.sender._id === userInfo?._id) return prev;
+                if (message.sender._id === currentUser?._id) return prev;
                 return [...prev, message];
             });
 
             // Send notification if not from self
-            if (message.sender._id !== userInfo._id && Notification.permission === 'granted') {
+            if (message.sender._id !== currentUser?._id && Notification.permission === 'granted') {
                 new Notification(`New message from ${message.sender.name}`, {
                     body: message.content
                 });
@@ -485,12 +485,12 @@ const WorkspaceDetail = () => {
                                 </div>
                             ) : (
                                 messages.map(msg => (
-                                    <div key={msg._id} className={`flex flex-col ${msg.sender?._id === userInfo?._id ? 'items-end' : 'items-start'}`}>
-                                        <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${msg.sender?._id === userInfo?._id ? 'bg-[#4ade80] text-[#021f1a] rounded-tr-none' : 'bg-[#1a3a35] text-gray-200 rounded-tl-none border border-[#25524b]'}`}>
+                                    <div key={msg._id} className={`flex flex-col ${msg.sender?._id === currentUser?._id ? 'items-end' : 'items-start'}`}>
+                                        <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${msg.sender?._id === currentUser?._id ? 'bg-[#4ade80] text-[#021f1a] rounded-tr-none' : 'bg-[#1a3a35] text-gray-200 rounded-tl-none border border-[#25524b]'}`}>
                                             {msg.content}
                                         </div>
                                         <div className="flex items-center gap-1.5 mt-1 px-1">
-                                            {msg.sender?._id !== userInfo?._id && <span className="text-[10px] font-bold text-[#4ade80]">{msg.sender?.name}</span>}
+                                            {msg.sender?._id !== currentUser?._id && <span className="text-[10px] font-bold text-[#4ade80]">{msg.sender?.name}</span>}
                                             <span className="text-[9px] text-gray-500">
                                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
