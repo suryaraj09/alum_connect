@@ -1,4 +1,5 @@
 const Profile = require('../models/Profile');
+const Connection = require('../models/Connection');
 
 // @desc    Get or Create Profile
 // @route   GET /api/profiles/me
@@ -116,7 +117,23 @@ const getProfiles = async (req, res, next) => {
             });
         }
 
-        res.json(profiles);
+        // Enrich profiles with connection status
+        const enrichedProfiles = await Promise.all(profiles.map(async (p) => {
+            const connection = await Connection.findOne({
+                $or: [
+                    { requester: req.user._id, recipient: p.user._id },
+                    { requester: p.user._id, recipient: req.user._id },
+                ],
+            });
+
+            return {
+                ...p.toObject(),
+                connectionStatus: connection ? connection.status : 'none',
+                isRequester: connection ? connection.requester.toString() === req.user._id.toString() : false
+            };
+        }));
+
+        res.json(enrichedProfiles);
     } catch (error) {
         next(error);
     }
@@ -141,7 +158,18 @@ const getProfileById = async (req, res, next) => {
             return res.status(404).json({ message: 'Profile not found' });
         }
 
-        res.json(profile);
+        const connection = await Connection.findOne({
+            $or: [
+                { requester: req.user._id, recipient: profile.user._id },
+                { requester: profile.user._id, recipient: req.user._id },
+            ],
+        });
+
+        res.json({
+            ...profile.toObject(),
+            connectionStatus: connection ? connection.status : 'none',
+            isRequester: connection ? connection.requester.toString() === req.user._id.toString() : false
+        });
     } catch (error) {
         if (error.kind === 'ObjectId') {
             return res.status(404).json({ message: 'Profile not found' });

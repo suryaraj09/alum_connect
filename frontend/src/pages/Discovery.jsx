@@ -29,6 +29,12 @@ const Discovery = () => {
     const handleConnect = async (userId) => {
         try {
             await api.post(`/connections/request/${userId}`);
+            // Update local state for immediate feedback
+            setProfiles(prev => prev.map(p =>
+                p.user?._id === userId
+                    ? { ...p, connectionStatus: 'pending', isRequester: true }
+                    : p
+            ));
             alert('Connection request sent!');
         } catch (err) {
             alert(err.response?.data?.message || 'Error sending request');
@@ -132,12 +138,28 @@ const Discovery = () => {
                                     </div>
 
                                     <div className="pt-6 flex gap-3">
-                                        <button
-                                            onClick={() => handleConnect(p.user?._id)}
-                                            className="flex-grow bg-[#4ade80] text-[#021f1a] font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:bg-[#34d399] transition-all shadow-lg shadow-[#4ade80]/10 active:scale-95"
-                                        >
-                                            <UserPlus size={18} /> Connect
-                                        </button>
+                                        {p.connectionStatus === 'none' ? (
+                                            <button
+                                                onClick={() => handleConnect(p.user?._id)}
+                                                className="flex-grow bg-[#4ade80] text-[#021f1a] font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:bg-[#34d399] transition-all shadow-lg shadow-[#4ade80]/10 active:scale-95"
+                                            >
+                                                <UserPlus size={18} /> Connect
+                                            </button>
+                                        ) : p.connectionStatus === 'pending' ? (
+                                            <button
+                                                disabled
+                                                className="flex-grow bg-[#052e28] text-gray-400 border border-white/10 font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed"
+                                            >
+                                                <UserPlus size={18} /> {p.isRequester ? 'Pending' : 'Accept Request'}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                disabled
+                                                className="flex-grow bg-[#1a3a35] text-[#4ade80] border border-[#4ade80]/20 font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed shadow-inner"
+                                            >
+                                                <UserCheck size={18} /> Connected
+                                            </button>
+                                        )}
                                         <Link
                                             to={`/profile/${p.user?._id}`}
                                             className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"

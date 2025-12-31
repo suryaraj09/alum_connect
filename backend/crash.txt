@@ -1,0 +1,87 @@
+﻿node : 
+node:events:496
+At line:1 char:1
++ node src/server.js 
+2>&1 | Out-File 
+-FilePath crash.txt 
+-Encoding utf8 ...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (node:ev   
+ ents:496:String)    
+ [], RemoteExcep    
+tion
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+      throw er; // 
+Unhandled 'error' 
+event
+      ^
+
+Error: listen 
+EADDRINUSE: address 
+already in use 
+:::5001
+    at Server.setupLi
+stenHandle [as 
+_listen2] 
+(node:net:1940:16)
+    at 
+listenInCluster 
+(node:net:1997:12)
+    at Server.listen 
+(node:net:2102:7)
+    at 
+Function.listen 
+(C:\Users\suryaraj 
+sinh jadeja\OneDrive\
+Desktop\alum_connect\
+backend\node_modules\
+express\lib\applicati
+on.js:635:24)
+    at 
+Object.<anonymous> 
+(C:\Users\suryaraj 
+sinh jadeja\OneDrive\
+Desktop\alum_connect\
+backend\src\server.js
+:62:20)
+    at 
+Module._compile (node
+:internal/modules/cjs
+/loader:1730:14)
+    at Object..js (no
+de:internal/modules/c
+js/loader:1895:10)
+    at Module.load (n
+ode:internal/modules/
+cjs/loader:1465:32)
+    at 
+Function._load (node:
+internal/modules/cjs/
+loader:1282:12)
+    at TracingChannel
+.traceSync (node:diag
+nostics_channel:322:1
+4)
+Emitted 'error' 
+event on Server 
+instance at:
+    at emitErrorNT 
+(node:net:1976:8)
+    at process.proces
+sTicksAndRejections (
+node:internal/process
+/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5001
+}
+
+Node.js v22.17.0

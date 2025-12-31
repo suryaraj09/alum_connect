@@ -5,12 +5,14 @@ const {
     acceptConnectionRequest,
     getMyConnections,
     getPendingRequests,
-    getFriendConnections
+    getFriendConnections,
+    getSentRequests
 } = require('../controllers/connectionController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.get('/', protect, getMyConnections);
 router.get('/received', protect, getPendingRequests);
+router.get('/sent', protect, getSentRequests);
 router.get('/friends', protect, getFriendConnections);
 router.post('/request/:id', protect, sendConnectionRequest);
 router.post('/accept/:id', protect, acceptConnectionRequest);

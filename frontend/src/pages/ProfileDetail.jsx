@@ -59,7 +59,20 @@ const ProfileDetail = () => {
         </div>
     );
 
-    const videoPost = posts.find(p => p.media?.type === 'video');
+    const handleConnect = async () => {
+        try {
+            await api.post(`/connections/request/${profile.user?._id}`);
+            // Update local state to show pending
+            setProfile({
+                ...profile,
+                connectionStatus: 'pending',
+                isRequester: true
+            });
+            alert('Connection request sent!');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Error sending request');
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#021f1a] text-white">
@@ -67,7 +80,7 @@ const ProfileDetail = () => {
             <div className="max-w-7xl mx-auto px-6 py-8 flex items-center gap-3 text-sm text-gray-400">
                 <Link to="/" className="hover:text-white transition-colors"><Home size={16} /></Link>
                 <ChevronRight size={14} />
-                <Link to="/" className="hover:text-white transition-colors">Find a Mentor</Link>
+                <Link to="/discovery" className="hover:text-white transition-colors">Find a Mentor</Link>
                 <ChevronRight size={14} />
                 <span className="text-white">{profile.user?.name}</span>
             </div>
@@ -84,17 +97,40 @@ const ProfileDetail = () => {
                     </div>
                     <div className="flex-grow text-center md:text-left">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4ade80]/10 border border-[#4ade80]/20 rounded-full text-[#4ade80] text-sm font-bold mb-6">
-                            <Award size={16} /> Top Mentor
+                            <Award size={16} /> Alum_Connect Member
                         </div>
                         <h1 className="text-5xl md:text-6xl font-serif font-bold mb-4 tracking-tight">{profile.user?.name}</h1>
                         <p className="text-xl md:text-2xl text-gray-400 mb-8 font-light">{profile.title || profile.domain}</p>
 
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                            <button className="px-8 py-3 bg-[#1a3a35] hover:bg-[#25524b] border border-[#4ade80]/30 rounded-full font-bold transition-all flex items-center gap-2">
-                                <Star size={18} className="text-[#4ade80]" /> Save
+                            {profile.connectionStatus === 'none' ? (
+                                <button
+                                    onClick={handleConnect}
+                                    className="px-8 py-3 bg-[#4ade80] text-[#021f1a] rounded-full font-bold hover:bg-[#34d399] transition-all flex items-center gap-2 shadow-lg shadow-[#4ade80]/10 active:scale-95"
+                                >
+                                    <UserPlus size={18} /> Connect
+                                </button>
+                            ) : profile.connectionStatus === 'pending' ? (
+                                <button
+                                    disabled
+                                    className="px-8 py-3 bg-[#1a3a35] text-gray-400 border border-white/10 rounded-full font-bold transition-all flex items-center gap-2 cursor-not-allowed"
+                                >
+                                    <Plus size={18} /> {profile.isRequester ? 'Pending' : 'Accept Request'}
+                                </button>
+                            ) : (
+                                <button
+                                    disabled
+                                    className="px-8 py-3 bg-[#1a3a35] text-[#4ade80] border border-[#4ade80]/20 rounded-full font-bold transition-all flex items-center gap-2 cursor-not-allowed shadow-inner"
+                                >
+                                    <UserCheck size={18} /> Connected
+                                </button>
+                            )}
+
+                            <button className="p-3 bg-[#1a3a35] hover:bg-[#25524b] border border-white/10 rounded-full transition-all text-gray-400 hover:text-white">
+                                <Bookmark size={20} />
                             </button>
-                            <a href="#" className="p-3 bg-[#1a3a35] hover:bg-[#25524b] border border-[#4ade80]/30 rounded-full transition-all">
-                                <Linkedin size={20} className="text-[#4ade80]" />
+                            <a href="#" className="p-3 bg-[#1a3a35] hover:bg-[#25524b] border border-white/10 rounded-full transition-all text-gray-400 hover:text-[#4ade80]">
+                                <Linkedin size={20} />
                             </a>
                         </div>
                     </div>

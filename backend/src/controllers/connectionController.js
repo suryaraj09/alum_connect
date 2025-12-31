@@ -111,6 +111,31 @@ const getPendingRequests = async (req, res, next) => {
     }
 };
 
+// @desc    Get sent pending requests
+// @route   GET /api/connections/sent
+// @access  Private
+const getSentRequests = async (req, res, next) => {
+    try {
+        const requests = await Connection.find({
+            requester: req.user._id,
+            status: 'pending',
+        }).populate('recipient', ['name', 'email']);
+
+        const enrichedRequests = requests.map(req => ({
+            _id: req._id,
+            to: {
+                name: req.recipient.name,
+                role: 'Alum_Connect Member'
+            },
+            type: 'Mentorship'
+        }));
+
+        res.json(enrichedRequests);
+    } catch (error) {
+        next(error);
+    }
+};
+
 // @desc    Get accepted connections with workspaces
 // @route   GET /api/connections/friends
 // @access  Private
@@ -142,5 +167,6 @@ module.exports = {
     acceptConnectionRequest,
     getMyConnections,
     getPendingRequests,
-    getFriendConnections
+    getFriendConnections,
+    getSentRequests
 };
