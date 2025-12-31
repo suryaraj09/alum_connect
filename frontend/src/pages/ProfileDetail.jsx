@@ -76,6 +76,7 @@ const ProfileDetail = () => {
             alert(err.response?.data?.message || 'Error sending request');
         }
     };
+    const videoPost = posts.find(p => p.media?.type === 'video');
 
     return (
         <div className="min-h-screen bg-[#021f1a] text-white">

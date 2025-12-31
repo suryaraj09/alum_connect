@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { Video, MessageSquare, FileText, Send, Building2, User, Phone, PhoneOff, Home, Folder, Plus, Grid, Clock, X } from 'lucide-react';
 import { io } from 'socket.io-client';
 import api from '../services/api';
@@ -24,14 +25,14 @@ const WorkspaceDetail = () => {
     const typingTimeoutRef = useRef(null);
 
     const [isConnected, setIsConnected] = useState(false);
-    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    const { user: currentUser } = useAuth();
     const [workspace, setWorkspace] = useState(null);
 
     // Initialize Socket.io connection
     useEffect(() => {
         const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001', {
             auth: {
-                token: userInfo?.token
+                token: currentUser?.token
             }
         });
 
@@ -53,15 +54,18 @@ const WorkspaceDetail = () => {
         // Join workspace room
         newSocket.emit('join-workspace', {
             workspaceId: id,
-            userId: userInfo?._id
+            userId: currentUser?._id
         });
 
         console.log('Emitted join-workspace for:', id);
 
-        // Listen for new messages
         newSocket.on('new-message', (message) => {
             console.log('Received new message:', message);
-            setMessages(prev => [...prev, message]);
+            setMessages(prev => {
+                // Avoid duplicates if from self (already added optimistically)
+                if (message.sender._id === userInfo?._id) return prev;
+                return [...prev, message];
+            });
 
             // Send notification if not from self
             if (message.sender._id !== userInfo._id && Notification.permission === 'granted') {
@@ -104,11 +108,11 @@ const WorkspaceDetail = () => {
         return () => {
             newSocket.emit('leave-workspace', {
                 workspaceId: id,
-                userId: userInfo?._id
+                userId: currentUser?._id
             });
             newSocket.close();
         };
-    }, [id, userInfo?._id]);
+    }, [id, currentUser?._id]);
 
     // Load workspace details
     useEffect(() => {
@@ -171,9 +175,24 @@ const WorkspaceDetail = () => {
         e.preventDefault();
         if (!newMessage.trim() || !socket) return;
 
+        const messageData = {
+            _id: Date.now().toString(), // Temporary ID
+            workspace: id,
+            sender: {
+                _id: currentUser?._id,
+                name: currentUser?.name,
+                profilePicture: currentUser?.profilePicture
+            },
+            content: newMessage,
+            type: 'text',
+            createdAt: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, messageData]);
+
         socket.emit('send-message', {
             workspaceId: id,
-            userId: userInfo._id,
+            userId: currentUser?._id,
             content: newMessage,
             type: 'text'
         });
@@ -183,7 +202,7 @@ const WorkspaceDetail = () => {
         // Stop typing indicator
         socket.emit('typing', {
             workspaceId: id,
-            userId: userInfo._id,
+            userId: currentUser?._id,
             isTyping: false
         });
     };
@@ -196,7 +215,7 @@ const WorkspaceDetail = () => {
         // Send typing indicator
         socket.emit('typing', {
             workspaceId: id,
-            userId: userInfo._id,
+            userId: currentUser?._id,
             isTyping: true
         });
 
@@ -209,14 +228,14 @@ const WorkspaceDetail = () => {
         typingTimeoutRef.current = setTimeout(() => {
             socket.emit('typing', {
                 workspaceId: id,
-                userId: userInfo._id,
+                userId: currentUser?._id,
                 isTyping: false
             });
         }, 2000);
     };
 
     return (
-        <div className="min-h-screen bg-[#021f1a] text-white pt-20 flex">
+        <div className="h-[calc(100vh-80px)] mt-20 bg-[#021f1a] text-white flex overflow-hidden">
             {/* Sidebar Tools */}
             <aside className="w-20 bg-[#011613] border-r border-[#1a3a35] flex flex-col py-8 gap-1">
                 <button
@@ -274,14 +293,14 @@ const WorkspaceDetail = () => {
                 <header className="h-16 border-b border-[#1a3a35] px-8 flex items-center justify-between bg-[#052e28]/50 backdrop-blur-md">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-[#4ade80] rounded-full flex items-center justify-center text-[#021f1a] font-bold text-xs overflow-hidden">
-                            {workspace?.members.find(m => m._id !== userInfo?._id)?.profilePicture ? (
-                                <img src={workspace.members.find(m => m._id !== userInfo?._id).profilePicture} className="w-full h-full object-cover" />
+                            {workspace?.members.find(m => m._id !== currentUser?._id)?.profilePicture ? (
+                                <img src={workspace.members.find(m => m._id !== currentUser?._id).profilePicture} className="w-full h-full object-cover" />
                             ) : (
                                 <Building2 size={16} />
                             )}
                         </div>
                         <h2 className="font-serif font-bold">
-                            Office Workspace: <span className="text-[#4ade80]">{workspace?.members.find(m => m._id !== userInfo?._id)?.name || 'Loading...'}</span>
+                            Office Workspace: <span className="text-[#4ade80]">{workspace?.members.find(m => m._id !== currentUser?._id)?.name || 'Loading...'}</span>
                         </h2>
                     </div>
                     <div className="flex items-center gap-4">
@@ -303,9 +322,9 @@ const WorkspaceDetail = () => {
                     </div>
                 </header>
 
-                <div className="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-0">
-                    {/* Live View Area (Center) */}
-                    <div className="lg:col-span-2 p-8 flex flex-col gap-6 relative">
+                <div className="flex-grow grid grid-cols-1 lg:grid-cols-4 h-[calc(100vh-144px)] overflow-hidden">
+                    {/* Live View Area (Left/Center) */}
+                    <div className="lg:col-span-3 p-8 flex flex-col gap-6 relative overflow-y-auto custom-scrollbar">
                         {incomingCall && !isInCall && (
                             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-[#052e28] border-2 border-[#4ade80] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-bounce">
                                 <div className="flex items-center gap-3">
@@ -458,21 +477,36 @@ const WorkspaceDetail = () => {
                             <h3 className="text-sm font-bold">Workspace Chat</h3>
                         </div>
 
-                        <div className="flex-grow p-4 space-y-4 overflow-y-auto">
-                            {messages.map(msg => (
-                                <div key={msg._id} className={`flex flex-col ${msg.sender._id === userInfo._id ? 'items-end' : 'items-start'}`}>
-                                    <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender._id === userInfo._id ? 'bg-[#008ba3] text-white rounded-tr-none' : 'bg-[#1a3a35] text-gray-200 rounded-tl-none'}`}>
-                                        {msg.content}
-                                    </div>
-                                    <span className="text-[10px] text-gray-500 mt-1">
-                                        {msg.sender.name} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+                        <div className="flex-grow p-4 space-y-4 overflow-y-auto custom-scrollbar relative">
+                            {messages.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-30 italic text-center">
+                                    <MessageSquare size={48} className="mb-4" />
+                                    <p>No messages yet.<br />Start the conversation!</p>
                                 </div>
-                            ))}
+                            ) : (
+                                messages.map(msg => (
+                                    <div key={msg._id} className={`flex flex-col ${msg.sender?._id === userInfo?._id ? 'items-end' : 'items-start'}`}>
+                                        <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm shadow-sm ${msg.sender?._id === userInfo?._id ? 'bg-[#4ade80] text-[#021f1a] rounded-tr-none' : 'bg-[#1a3a35] text-gray-200 rounded-tl-none border border-[#25524b]'}`}>
+                                            {msg.content}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 mt-1 px-1">
+                                            {msg.sender?._id !== userInfo?._id && <span className="text-[10px] font-bold text-[#4ade80]">{msg.sender?.name}</span>}
+                                            <span className="text-[9px] text-gray-500">
+                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                             {isTyping && (
                                 <div className="flex items-start">
-                                    <div className="bg-[#1a3a35] text-gray-400 p-3 rounded-2xl text-sm italic">
-                                        typing...
+                                    <div className="bg-[#1a3a35] text-gray-400 px-4 py-3 rounded-2xl flex items-center gap-1.5 shadow-sm border border-[#25524b]">
+                                        <div className="flex gap-1">
+                                            <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                            <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                            <div className="w-1.5 h-1.5 bg-[#4ade80] rounded-full animate-bounce"></div>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Typing</span>
                                     </div>
                                 </div>
                             )}

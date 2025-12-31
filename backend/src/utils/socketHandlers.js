@@ -71,9 +71,9 @@ module.exports = (io) => {
                 await message.populate('sender', 'name profilePicture');
 
                 // Broadcast to all users in the workspace
+                const clients = await io.in(workspaceId).allSockets();
+                console.log(`Broadcasting to ${clients.size} clients in workspace ${workspaceId}`);
                 io.to(workspaceId).emit('new-message', message);
-
-                console.log(`Message sent in workspace ${workspaceId}`);
             } catch (error) {
                 console.error('Error sending message:', error);
                 socket.emit('error', { message: 'Failed to send message' });
