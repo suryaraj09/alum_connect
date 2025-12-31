@@ -13,7 +13,10 @@ import {
     Home,
     Video,
     Award,
-    Bookmark
+    Bookmark,
+    UserPlus,
+    UserCheck,
+    Plus
 } from 'lucide-react';
 import { getMediaUrl } from '../utils/url';
 
