@@ -256,10 +256,10 @@ const Network = () => {
                                     </div>
                                     <button
                                         onClick={() => navigate(`/workspace/${conn.workspaceId}`)}
-                                        className="p-2 bg-[#052e28] text-[#4ade80] rounded-lg hover:bg-[#4ade80] hover:text-[#021f1a] transition-all"
-                                        title="Enter Office Workspace"
+                                        className="p-2 bg-[#1a3a35] text-gray-400 rounded-lg hover:text-[#4ade80] transition-all"
+                                        title="Message"
                                     >
-                                        <Building2 size={16} />
+                                        <MessageSquare size={18} />
                                     </button>
                                 </div>
                             ))}

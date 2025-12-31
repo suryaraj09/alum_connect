@@ -92,7 +92,7 @@ module.exports = (io) => {
 
         // Resource sharing
         socket.on('resource-shared', ({ workspaceId, resource }) => {
-            io.to(workspaceId).emit('new-resource', resource);
+            io.to(workspaceId).emit('new-resource', { workspaceId, resource });
         });
 
         // Video call signaling

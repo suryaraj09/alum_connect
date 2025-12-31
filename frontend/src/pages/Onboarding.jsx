@@ -203,7 +203,9 @@ const Onboarding = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Professional Title</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Professional Title <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-4 rounded-2xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] transition-all outline-none placeholder:text-gray-600"
@@ -213,7 +215,9 @@ const Onboarding = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Location <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-4 rounded-2xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] transition-all outline-none placeholder:text-gray-600"
@@ -226,7 +230,9 @@ const Onboarding = () => {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Primary Domain</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Primary Domain <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-4 rounded-2xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] transition-all outline-none placeholder:text-gray-600"
@@ -236,13 +242,44 @@ const Onboarding = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Short Bio</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Short Bio <span className="text-red-500">*</span>
+                                </label>
                                 <textarea
                                     className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-4 rounded-2xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] transition-all outline-none placeholder:text-gray-600 h-24"
                                     placeholder="Tell the community who you are..."
                                     value={formData.bio}
                                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Languages <span className="text-red-500">*</span>
+                                </label>
+                                <div className="flex gap-2 mb-2">
+                                    <input
+                                        type="text"
+                                        className="flex-1 bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none"
+                                        placeholder="Add a language (e.g. English, Gujarati)..."
+                                        value={languageInput}
+                                        onChange={(e) => setLanguageInput(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && addLanguage()}
+                                    />
+                                    <button
+                                        onClick={addLanguage}
+                                        className="px-4 py-2 bg-[#4ade80]/10 border border-[#4ade80]/20 text-[#4ade80] rounded-xl hover:bg-[#4ade80]/20 transition-all"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.languages.map(lang => (
+                                        <span key={lang} className="bg-[#4ade80]/10 text-[#4ade80] px-3 py-1 rounded-lg text-xs flex items-center gap-2 border border-[#4ade80]/20">
+                                            {lang}
+                                            <X size={14} className="cursor-pointer hover:text-white" onClick={() => removeLanguage(lang)} />
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -336,7 +373,9 @@ const Onboarding = () => {
                         {formData.education.map((edu, idx) => (
                             <div key={idx} className="space-y-4 p-6 bg-black/20 rounded-2xl border border-white/5">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">School / University</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        School / University <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none"
@@ -347,7 +386,9 @@ const Onboarding = () => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">Degree</label>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                                            Degree <span className="text-red-500">*</span>
+                                        </label>
                                         <input
                                             type="text"
                                             className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none"
@@ -443,6 +484,17 @@ const Onboarding = () => {
                                             </label>
                                         </div>
                                     </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Description <span className="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        className="w-full bg-[#021f1a]/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#4ade80]/20 focus:border-[#4ade80] outline-none h-24"
+                                        placeholder="Describe your role and achievements..."
+                                        value={exp.description}
+                                        onChange={(e) => handleExperienceChange(idx, 'description', e.target.value)}
+                                    />
                                 </div>
                             </div>
                         ))}
@@ -581,11 +633,10 @@ const Onboarding = () => {
                         {step < 7 ? (
                             <button
                                 disabled={
-                                    (step === 1 && (!formData.domain.trim() || !formData.title.trim() || !formData.location.trim() || !formData.bio.trim())) ||
+                                    (step === 1 && (!formData.domain.trim() || !formData.title.trim() || !formData.location.trim() || !formData.bio.trim() || formData.languages.length === 0)) ||
                                     (step === 4 && (!formData.education[0]?.school.trim() || !formData.education[0]?.degree.trim())) ||
-                                    (step === 5 && (!formData.experience[0]?.title.trim() || !formData.experience[0]?.company.trim())) ||
-                                    (step === 6 && roles.isMentee && formData.skillsToLearn.length === 0) ||
-                                    (step === 6 && roles.isMentor && formData.skillsToTeach.length === 0)
+                                    (step === 5 && (!formData.experience[0]?.title.trim() || !formData.experience[0]?.company.trim() || !formData.experience[0]?.description.trim())) ||
+                                    (step === 6 && ((roles.isMentee && formData.skillsToLearn.length === 0) || (roles.isMentor && formData.skillsToTeach.length === 0)))
                                 }
                                 onClick={() => setStep(step + 1)}
                                 className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-3 rounded-2xl flex items-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed group"

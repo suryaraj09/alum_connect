@@ -60,7 +60,7 @@ const sendMessage = async (req, res, next) => {
 // @access  Private
 const addResource = async (req, res, next) => {
     try {
-        const { title, url } = req.body;
+        const { title, url, type } = req.body;
         const workspace = await Workspace.findById(req.params.id);
 
         if (!workspace || !workspace.members.includes(req.user._id)) {
@@ -68,7 +68,7 @@ const addResource = async (req, res, next) => {
             throw new Error('Not authorized');
         }
 
-        workspace.resources.push({ title, url, uploadedBy: req.user._id });
+        workspace.resources.push({ title, url, type, uploadedBy: req.user._id });
         await workspace.save();
 
         res.status(201).json(workspace);

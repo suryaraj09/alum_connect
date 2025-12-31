@@ -6,15 +6,7 @@ const ALLOWED_DOMAIN = 'ahduni.edu.in';
 
 const checkProfileComplete = async (userId) => {
     const profile = await Profile.findOne({ user: userId });
-    if (!profile) return false;
-
-    // Check required fields for gatekeeping
-    const isComplete =
-        profile.education && profile.education.length > 0 &&
-        profile.domain &&
-        profile.skills && profile.skills.length > 0;
-
-    return !!isComplete;
+    return !!profile;
 };
 
 // @desc    Register a new user

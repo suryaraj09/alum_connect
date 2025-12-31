@@ -11,12 +11,10 @@ const FileManager = ({ workspaceId, socket }) => {
         loadFiles();
 
         if (socket) {
-            socket.on('new-resource', (resource) => {
-                // If it's a full workspace update or just a resource, handle accordingly.
-                // Assuming resource is the new file object.
-                // Since the API returns the updated workspace, we might need to be careful with duplication if we reload.
-                // But for real-time from OTHER users:
-                loadFiles(); // Easiest way is to just reload the list
+            socket.on('new-resource', ({ workspaceId: wsId, resource }) => {
+                if (wsId === workspaceId) {
+                    loadFiles();
+                }
             });
         }
 
@@ -28,7 +26,9 @@ const FileManager = ({ workspaceId, socket }) => {
     const loadFiles = async () => {
         try {
             const { data } = await api.get(`/workspaces/${workspaceId}/resources`);
-            setFiles(data);
+            // Only show resources of type 'file'
+            const onlyFiles = data.filter(r => r.type === 'file');
+            setFiles(onlyFiles);
         } catch (error) {
             console.error('Error loading files:', error);
         }
@@ -51,7 +51,8 @@ const FileManager = ({ workspaceId, socket }) => {
             // 2. Add resource to workspace
             const resourceData = {
                 title: file.name,
-                url: uploadRes.data.url
+                url: uploadRes.data.url,
+                type: 'file'
             };
 
             const { data } = await api.post(`/workspaces/${workspaceId}/resources`, resourceData);

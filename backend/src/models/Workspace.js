@@ -13,6 +13,11 @@ const workspaceSchema = new mongoose.Schema({
     resources: [{
         title: String,
         url: String,
+        type: {
+            type: String,
+            enum: ['document', 'spreadsheet', 'meeting', 'file'],
+            default: 'file'
+        },
         uploadedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'

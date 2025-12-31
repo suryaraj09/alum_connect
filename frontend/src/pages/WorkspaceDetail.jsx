@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Video, MessageSquare, FileText, Send, Building2, User, Phone, PhoneOff, Home, Folder, Plus, Grid } from 'lucide-react';
+import { Video, MessageSquare, FileText, Send, Building2, User, Phone, PhoneOff, Home, Folder, Plus, Grid, Clock, X } from 'lucide-react';
 import { io } from 'socket.io-client';
 import api from '../services/api';
 import VideoCall from '../components/VideoCall';
-import DocumentEditor from '../components/DocumentEditor';
+import SharedResources from '../components/SharedResources';
 import FileManager from '../components/FileManager';
-
 const WorkspaceDetail = () => {
     const { id } = useParams();
     const [messages, setMessages] = useState([]);
@@ -16,13 +15,17 @@ const WorkspaceDetail = () => {
     const [activeUsers, setActiveUsers] = useState([]);
     const [isInCall, setIsInCall] = useState(false);
     const [incomingCall, setIncomingCall] = useState(null);
-    const [activeView, setActiveView] = useState('default'); // 'default', 'document', 'files'
+    const [activeView, setActiveView] = useState('default'); // 'default', 'document', 'spreadsheet', 'meeting', 'files'
+    const [showLinkModal, setShowLinkModal] = useState(false);
+    const [linkModalType, setLinkModalType] = useState('document');
+    const [linkData, setLinkData] = useState({ title: '', url: '' });
+    const [isSharing, setIsSharing] = useState(false);
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
 
     const [isConnected, setIsConnected] = useState(false);
-
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+    const [workspace, setWorkspace] = useState(null);
 
     // Initialize Socket.io connection
     useEffect(() => {
@@ -107,6 +110,20 @@ const WorkspaceDetail = () => {
         };
     }, [id, userInfo?._id]);
 
+    // Load workspace details
+    useEffect(() => {
+        const fetchWorkspace = async () => {
+            try {
+                const { data } = await api.get('/workspaces');
+                const currentWs = data.find(ws => ws._id === id);
+                setWorkspace(currentWs);
+            } catch (err) {
+                console.error('Failed to fetch workspace:', err);
+            }
+        };
+        fetchWorkspace();
+    }, [id]);
+
     // Load message history
     useEffect(() => {
         const loadMessages = async () => {
@@ -124,6 +141,31 @@ const WorkspaceDetail = () => {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    const handleShareLink = async (e) => {
+        e.preventDefault();
+        if (!linkData.title || !linkData.url) return;
+
+        setIsSharing(true);
+        try {
+            const { data } = await api.post(`/workspaces/${id}/resources`, {
+                ...linkData,
+                type: linkModalType
+            });
+
+            if (socket) {
+                socket.emit('resource-shared', { workspaceId: id, resource: data });
+            }
+
+            setLinkData({ title: '', url: '' });
+            setShowLinkModal(false);
+            setActiveView(linkModalType);
+        } catch (error) {
+            console.error('Error sharing link:', error);
+        } finally {
+            setIsSharing(false);
+        }
+    };
 
     const handleSend = (e) => {
         e.preventDefault();
@@ -176,21 +218,17 @@ const WorkspaceDetail = () => {
     return (
         <div className="min-h-screen bg-[#021f1a] text-white pt-20 flex">
             {/* Sidebar Tools */}
-            <aside className="w-20 bg-[#052e28] border-r border-[#1a3a35] flex flex-col items-center py-8 gap-8">
+            <aside className="w-20 bg-[#011613] border-r border-[#1a3a35] flex flex-col py-8 gap-1">
                 <button
                     onClick={() => setActiveView('default')}
                     className={`p-3 transition-all ${activeView === 'default' ? 'text-[#4ade80] bg-[#1a3a35]/50 rounded-xl' : 'text-gray-400 hover:text-white'}`}
-                    title="Home"
+                    title="Workspace Home"
                 >
                     <Home size={24} />
                 </button>
-                <button
-                    onClick={() => setIsInCall(true)}
-                    className={`p-3 rounded-2xl transition-all shadow-lg ${isInCall ? 'bg-[#4ade80] text-[#021f1a]' : 'bg-[#1a3a35] text-[#4ade80] hover:bg-[#4ade80] hover:text-[#021f1a]'}`}
-                    title="Live Video"
-                >
-                    <Video size={24} />
-                </button>
+
+                <div className="w-8 h-[1px] bg-[#1a3a35] mx-auto my-4" />
+
                 <button
                     onClick={() => setActiveView('document')}
                     className={`p-3 transition-all ${activeView === 'document' ? 'text-[#4ade80] bg-[#1a3a35]/50 rounded-xl' : 'text-gray-400 hover:text-white'}`}
@@ -199,11 +237,35 @@ const WorkspaceDetail = () => {
                     <FileText size={24} />
                 </button>
                 <button
+                    onClick={() => setActiveView('spreadsheet')}
+                    className={`p-3 transition-all ${activeView === 'spreadsheet' ? 'text-[#4ade80] bg-[#1a3a35]/50 rounded-xl' : 'text-gray-400 hover:text-white'}`}
+                    title="Spreadsheets"
+                >
+                    <Grid size={24} />
+                </button>
+                <button
+                    onClick={() => setActiveView('meeting')}
+                    className={`p-3 transition-all ${activeView === 'meeting' ? 'text-[#4ade80] bg-[#1a3a35]/50 rounded-xl' : 'text-gray-400 hover:text-white'}`}
+                    title="Meeting History"
+                >
+                    <Clock size={24} />
+                </button>
+                <button
                     onClick={() => setActiveView('files')}
                     className={`p-3 transition-all ${activeView === 'files' ? 'text-[#4ade80] bg-[#1a3a35]/50 rounded-xl' : 'text-gray-400 hover:text-white'}`}
-                    title="Files & Storage"
+                    title="Shared Storage"
                 >
                     <Folder size={24} />
+                </button>
+
+                <div className="flex-grow" />
+
+                <button
+                    onClick={() => setIsInCall(true)}
+                    className="p-3 text-[#4ade80] hover:bg-[#4ade80] hover:text-[#021f1a] transition-all bg-[#1a3a35] rounded-xl mx-3 mb-2 shadow-lg shadow-[#4ade80]/10 flex items-center justify-center"
+                    title="Instant Video Call"
+                >
+                    <Video size={24} />
                 </button>
             </aside>
 
@@ -211,10 +273,16 @@ const WorkspaceDetail = () => {
             <div className="flex-grow flex flex-col">
                 <header className="h-16 border-b border-[#1a3a35] px-8 flex items-center justify-between bg-[#052e28]/50 backdrop-blur-md">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-[#4ade80] rounded-full flex items-center justify-center text-[#021f1a] font-bold text-xs">
-                            <Building2 size={16} />
+                        <div className="w-8 h-8 bg-[#4ade80] rounded-full flex items-center justify-center text-[#021f1a] font-bold text-xs overflow-hidden">
+                            {workspace?.members.find(m => m._id !== userInfo?._id)?.profilePicture ? (
+                                <img src={workspace.members.find(m => m._id !== userInfo?._id).profilePicture} className="w-full h-full object-cover" />
+                            ) : (
+                                <Building2 size={16} />
+                            )}
                         </div>
-                        <h2 className="font-serif font-bold">Office Workspace: <span className="text-[#4ade80]">Expert Mentoring Session</span></h2>
+                        <h2 className="font-serif font-bold">
+                            Office Workspace: <span className="text-[#4ade80]">{workspace?.members.find(m => m._id !== userInfo?._id)?.name || 'Loading...'}</span>
+                        </h2>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isConnected ? 'bg-[#1a3a35] text-[#4ade80]' : 'bg-red-900/50 text-red-500'}`}>
@@ -266,8 +334,8 @@ const WorkspaceDetail = () => {
                             </div>
                         )}
 
-                        {activeView === 'document' ? (
-                            <DocumentEditor socket={socket} workspaceId={id} />
+                        {activeView === 'document' || activeView === 'spreadsheet' || activeView === 'meeting' ? (
+                            <SharedResources workspaceId={id} type={activeView} socket={socket} />
                         ) : activeView === 'files' ? (
                             <FileManager workspaceId={id} socket={socket} />
                         ) : (
@@ -279,35 +347,50 @@ const WorkspaceDetail = () => {
 
                                 <div className="grid grid-cols-2 gap-6">
                                     <button
-                                        onClick={() => setActiveView('document')}
+                                        onClick={() => {
+                                            setLinkModalType('document');
+                                            setShowLinkModal(true);
+                                        }}
                                         className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4"
                                     >
                                         <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <FileText size={24} />
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-lg">New Document</h4>
-                                            <p className="text-sm text-gray-400">Create a shared text document</p>
+                                            <h4 className="font-bold text-lg">Share Document</h4>
+                                            <p className="text-sm text-gray-400">Add link to Google Docs / Word</p>
                                         </div>
                                     </button>
 
-                                    <button className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4">
+                                    <button
+                                        onClick={() => {
+                                            setLinkModalType('spreadsheet');
+                                            setShowLinkModal(true);
+                                        }}
+                                        className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4"
+                                    >
                                         <div className="w-12 h-12 bg-green-500/20 text-green-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <Grid size={24} />
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-lg">New Spreadsheet</h4>
-                                            <p className="text-sm text-gray-400">Collaborate on data & tables</p>
+                                            <h4 className="font-bold text-lg">Share Spreadsheet</h4>
+                                            <p className="text-sm text-gray-400">Link Google Sheets / Excel</p>
                                         </div>
                                     </button>
 
-                                    <button onClick={() => setIsInCall(true)} className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4">
+                                    <button
+                                        onClick={() => {
+                                            setLinkModalType('meeting');
+                                            setShowLinkModal(true);
+                                        }}
+                                        className="group bg-[#1a3a35]/50 border border-[#1a3a35] p-6 rounded-2xl hover:border-[#4ade80] transition-all text-left space-y-4"
+                                    >
                                         <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <Video size={24} />
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-lg">Start Meeting</h4>
-                                            <p className="text-sm text-gray-400">Launch video/audio call</p>
+                                            <h4 className="font-bold text-lg">Create Meeting</h4>
+                                            <p className="text-sm text-gray-400">Share Google Meet link</p>
                                         </div>
                                     </button>
 
@@ -316,10 +399,53 @@ const WorkspaceDetail = () => {
                                             <Folder size={24} />
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-lg">Storage</h4>
-                                            <p className="text-sm text-gray-400">Manage shared files</p>
+                                            <h4 className="font-bold text-lg">Shared Storage</h4>
+                                            <p className="text-sm text-gray-400">Upload & manage shared files</p>
                                         </div>
                                     </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Link Sharing Modal */}
+                        {showLinkModal && (
+                            <div className="absolute inset-0 z-[60] bg-[#021f1a]/80 backdrop-blur-sm flex items-center justify-center p-8">
+                                <div className="bg-[#052e28] border border-[#1a3a35] w-full max-w-md rounded-[2rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-serif font-bold capitalize">Share {linkModalType}</h3>
+                                        <button onClick={() => setShowLinkModal(false)} className="text-gray-500 hover:text-white"><X size={24} /></button>
+                                    </div>
+                                    <form onSubmit={handleShareLink} className="space-y-6">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Title / Description</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder={linkModalType === 'meeting' ? 'e.g. Design Review - 3PM' : 'e.g. Marketing Strategy Draft'}
+                                                className="w-full bg-[#1a3a35] border border-[#1a3a35] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-all"
+                                                value={linkData.title}
+                                                onChange={e => setLinkData({ ...linkData, title: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">URL Link</label>
+                                            <input
+                                                type="url"
+                                                required
+                                                placeholder="https://..."
+                                                className="w-full bg-[#1a3a35] border border-[#1a3a35] rounded-xl px-4 py-3 outline-none focus:border-[#4ade80] transition-all"
+                                                value={linkData.url}
+                                                onChange={e => setLinkData({ ...linkData, url: e.target.value })}
+                                            />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={isSharing}
+                                            className="w-full py-4 bg-[#4ade80] text-[#021f1a] font-bold rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                                        >
+                                            {isSharing ? 'Sharing...' : `Share ${linkModalType}`}
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         )}
