@@ -12,7 +12,7 @@ const WorkspaceDetail = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [socket, setSocket] = useState(null);
-    const [typingUsers, setTypingUsers] = useState(new Set());
+    const [isTyping, setIsTyping] = useState(false);
     const [activeUsers, setActiveUsers] = useState([]);
     const [isInCall, setIsInCall] = useState(false);
     const [incomingCall, setIncomingCall] = useState(null);
@@ -24,6 +24,7 @@ const WorkspaceDetail = () => {
     const [unreadCount, setUnreadCount] = useState(0);
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
+    const activeViewRef = useRef(activeView);
 
     const [isConnected, setIsConnected] = useState(false);
     const { user: currentUser } = useAuth();
@@ -63,14 +64,11 @@ const WorkspaceDetail = () => {
         newSocket.on('new-message', (message) => {
             console.log('Received new message:', message);
             setMessages(prev => {
-                // Avoid duplicates if from self (checking both string and object forms)
-                const senderId = typeof message.sender === 'object' ? message.sender._id : message.sender;
-                if (senderId === currentUser?._id) return prev;
-                // Also check if message ID already exists (deduplication)
-                if (prev.some(m => m._id === message._id)) return prev;
+                // Avoid duplicates if from self (already added optimistically)
+                if (message.sender._id === currentUser?._id) return prev;
 
                 // Increment unread count if not in message view
-                if (activeView !== 'messages') {
+                if (activeViewRef.current !== 'messages') {
                     setUnreadCount(c => c + 1);
                 }
 
@@ -78,29 +76,27 @@ const WorkspaceDetail = () => {
             });
 
             // Send notification if not from self
-            const senderId = typeof message.sender === 'object' ? message.sender._id : message.sender;
-            if (senderId !== currentUser?._id && Notification.permission === 'granted') {
-                new Notification(`New message from ${message.sender?.name || 'Workspace'}`, {
+            if (message.sender._id !== currentUser?._id && Notification.permission === 'granted') {
+                new Notification(`New message from ${message.sender.name}`, {
                     body: message.content
                 });
             }
         });
 
-        // ... incoming-call listener ...
+        newSocket.on('incoming-call', ({ from, offer }) => {
+            console.log('Incoming call from:', from);
+            setIncomingCall({ from, offer });
+        });
 
-        // Request notification permission logic moved to explicit action
+        // Request notification permission
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
 
         // Listen for typing indicator
         newSocket.on('user-typing', ({ userId, isTyping }) => {
-            setTypingUsers(prev => {
-                const newSet = new Set(prev);
-                if (isTyping) {
-                    newSet.add(userId);
-                } else {
-                    newSet.delete(userId);
-                }
-                return newSet;
-            });
+            setIsTyping(isTyping);
         });
 
         // Listen for active users
@@ -139,6 +135,11 @@ const WorkspaceDetail = () => {
         };
         fetchWorkspace();
     }, [id]);
+
+    // Keep ref in sync
+    useEffect(() => {
+        activeViewRef.current = activeView;
+    }, [activeView]);
 
     // Load message history
     useEffect(() => {
@@ -353,22 +354,12 @@ const WorkspaceDetail = () => {
                     {activeView === 'messages' ? (
                         <div className="h-full flex flex-col bg-[#052e28]/30">
                             <div className="p-4 border-b border-[#1a3a35] flex items-center justify-between px-8">
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                     <MessageSquare size={18} className="text-[#4ade80]" />
                                     <h3 className="text-sm font-bold">Workspace Chat</h3>
-                                    {Notification.permission === 'default' && (
-                                        <button
-                                            onClick={() => Notification.requestPermission()}
-                                            className="text-[10px] bg-[#4ade80]/10 text-[#4ade80] px-2 py-1 rounded-md hover:bg-[#4ade80]/20 transition-colors"
-                                        >
-                                            Enable Notifications
-                                        </button>
-                                    )}
                                 </div>
-                                {typingUsers.size > 0 && (
-                                    <span className="text-[10px] font-bold text-[#4ade80] uppercase tracking-widest animate-pulse">
-                                        {typingUsers.size === 1 ? 'Someone is typing...' : 'Multiple people typing...'}
-                                    </span>
+                                {isTyping && (
+                                    <span className="text-[10px] font-bold text-[#4ade80] uppercase tracking-widest animate-pulse">Someone is typing...</span>
                                 )}
                             </div>
 
@@ -393,7 +384,7 @@ const WorkspaceDetail = () => {
                                         </div>
                                     ))
                                 )}
-                                {typingUsers.size > 0 && (
+                                {isTyping && (
                                     <div className="flex items-start">
                                         <div className="bg-[#1a3a35] text-gray-400 px-4 py-3 rounded-2xl flex items-center gap-1.5 shadow-sm border border-[#25524b]">
                                             <div className="flex gap-1">
